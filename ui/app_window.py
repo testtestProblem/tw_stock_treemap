@@ -11,7 +11,7 @@ import streamlit as st
 import config
 from data.exporter import export_snapshots
 from data.fetcher import ShioajiFetcher, UsageInfo
-from data.universe import StockMeta, build_meta_index, load_universe
+from data.universe import StockMeta, build_meta_index, category_of, load_universe
 
 
 @st.cache_resource(show_spinner="登入 Shioaji 並載入商品檔...")
@@ -64,6 +64,7 @@ def _merge_quotes(
                 "market": meta.market,
                 "industry": meta.industry,
                 "kind": meta.kind,
+                "category": category_of(meta),
                 "label": f"{code} {meta.name}",
                 "close": snap.get("close", 0.0),
                 "change_price": snap.get("change_price", 0.0),
@@ -115,31 +116,82 @@ def _build_treemap(
     df: pd.DataFrame,
     size_col: str,
     color_range: float,
+    title: str,
+    path: list,
 ) -> px.Figure:
+    plot_df = df.copy()
+    plot_df["price_text"] = plot_df["close"].map(lambda x: f"{x:.2f}")
+    plot_df["change_text"] = plot_df["change_rate"].map(lambda x: f"{x:+.2f}%")
+
     fig = px.treemap(
-        df,
-        path=[px.Constant("台股"), "market", "industry", "label"],
+        plot_df,
+        path=path,
         values=size_col,
         color="change_rate",
         color_continuous_scale=config.TREEMAP_COLORSCALE,
         range_color=[-color_range, color_range],
         color_continuous_midpoint=0,
+        custom_data=["price_text", "change_text"],
         hover_data={
             "code": True,
-            "name": True,
             "close": ":.2f",
             "change_rate": ":.2f",
             "total_amount": ":,",
             "total_volume": ":,",
             "market": False,
             "industry": False,
-            "label": False,
+            "name": False,
+            "price_text": False,
+            "change_text": False,
+            "category": False,
         },
-        title="台股即時 Treemap（大小=成交額/成交量，顏色=漲跌幅%）",
+        title=title,
     )
-    fig.update_layout(margin=dict(t=50, l=10, r=10, b=10))
-    fig.update_traces(textinfo="label+value")
+    fig.update_layout(
+        margin=dict(t=50, l=10, r=10, b=10),
+        uniformtext_minsize=8,
+        uniformtext_mode="hide",
+        height=520,
+    )
+    fig.update_traces(
+        texttemplate="%{label}<br>%{customdata[0]}<br>%{customdata[1]}",
+        textinfo="text",
+        textfont=dict(size=12),
+        insidetextfont=dict(size=11),
+    )
     return fig
+
+
+def _render_treemap_panel(
+    df: pd.DataFrame,
+    panel_title: str,
+    root_label: str,
+    categories: tuple[str, ...],
+    path_suffix: list[str],
+    size_col: str,
+    color_range: float,
+) -> None:
+    panel_df = df[df["category"].isin(categories)].copy()
+    st.subheader(panel_title)
+    if panel_df.empty:
+        st.info("此分類尚無成交資料。")
+        return
+
+    st.caption(
+        f"有成交 {len(panel_df)} 檔｜"
+        f"平均漲跌幅 {panel_df['change_rate'].mean():.2f}%｜"
+        f"上漲 {int((panel_df['change_rate'] > 0).sum())}｜"
+        f"下跌 {int((panel_df['change_rate'] < 0).sum())}"
+    )
+    path = [px.Constant(root_label), *path_suffix]
+    fig = _build_treemap(
+        panel_df,
+        size_col=size_col,
+        color_range=color_range,
+        title=f"{panel_title}（大小={'成交額' if size_col == 'total_amount' else '成交量'}，顏色=漲跌幅%）",
+        path=path,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render() -> None:
@@ -242,8 +294,44 @@ def render() -> None:
     col3.metric("上漲家數", int((df["change_rate"] > 0).sum()))
     col4.metric("下跌家數", int((df["change_rate"] < 0).sum()))
 
-    fig = _build_treemap(df, size_metric, color_range)
-    st.plotly_chart(fig, use_container_width=True)
+    st.divider()
+
+    _render_treemap_panel(
+        df,
+        panel_title="1. 上市 + 上櫃股票",
+        root_label="上市+上櫃",
+        categories=("listed", "otc"),
+        path_suffix=["market", "industry", "name"],
+        size_col=size_metric,
+        color_range=color_range,
+    )
+    _render_treemap_panel(
+        df,
+        panel_title="2. 上市股票",
+        root_label="上市",
+        categories=("listed",),
+        path_suffix=["market", "industry", "name"],
+        size_col=size_metric,
+        color_range=color_range,
+    )
+    _render_treemap_panel(
+        df,
+        panel_title="3. 上櫃股票",
+        root_label="上櫃",
+        categories=("otc",),
+        path_suffix=["industry", "name"],
+        size_col=size_metric,
+        color_range=color_range,
+    )
+    _render_treemap_panel(
+        df,
+        panel_title="4. ETF",
+        root_label="ETF",
+        categories=("etf",),
+        path_suffix=["name"],
+        size_col=size_metric,
+        color_range=color_range,
+    )
 
     with st.expander("行情表格（前 100 筆）"):
         display_df = df.sort_values("total_amount", ascending=False).head(100)
