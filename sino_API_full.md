@@ -1,0 +1,13233 @@
+# Shioaji - Taiwan's Leading Cross Platform Trading API
+
+> Shioaji is Taiwan's most popular trading API with highest market share. Cross-platform support for Windows, Linux, and Mac. Trade stocks, futures, options with Python. First Taiwan trading API with AI coding agent skills.
+
+# Usage documentation
+
+# 環境設定
+
+本頁針對使用 CLI 或透過 HTTP 連線的開發者（JavaScript / Go / C++ / C# / Rust / Java 等）。 Python 使用者請參考 [Python 使用者](../python/) 頁。
+
+## 系統需求
+
+- 作業系統：Windows、MacOS 或 Linux 之 64 位元版本
+- 使用者需要具備永豐金證券帳戶，並取得 Shioaji API 權限。
+
+## 安裝 shioaji 命令
+
+需要 `shioaji` 命令來啟動 HTTP server。
+
+```
+uv tool install shioaji
+
+```
+
+Linux / MacOS：
+
+```
+curl -fsSL https://raw.githubusercontent.com/sinotrade/shioaji/main/install.sh | sh
+
+```
+
+Windows (PowerShell)：
+
+```
+irm https://raw.githubusercontent.com/sinotrade/shioaji/main/install.ps1 | iex
+
+```
+
+## 建立 .env
+
+在要執行 `shioaji server start` 的目錄底下建立 `.env` 檔，內容如下：
+
+```
+# 必填
+SJ_API_KEY=YOUR_API_KEY
+SJ_SEC_KEY=YOUR_SECRET_KEY
+
+# 啟用憑證（正式環境下單必須）
+SJ_CA_PATH=your/ca/path/Sinopac.pfx
+SJ_CA_PASSWD=YOUR_CA_PASSWORD
+
+# 環境設置（設為 true 啟用正式環境；不設或設為 false 則為模擬模式）
+SJ_PRODUCTION=false
+
+```
+
+shioaji server 啟動時會自動讀取此檔，完成登入與憑證載入。
+
+如果已經開好戶可以跳過下一章直接前往 [金鑰與憑證申請](../../tutor/prepare/token/) 取得 API Key 與憑證。
+
+# 環境設定
+
+## 系統需求
+
+在開始之前，請確保你的系統符合以下需求：
+
+- 作業系統：Windows、MacOS 或 Linux 之 64 位元版本
+- Python 版本：3.8 以上
+- 使用者需要具備永豐金證券帳戶，並取得 Shioaji API 權限。
+
+## 安裝 Python 環境
+
+首先，你需要在系統上安裝 Python，推薦使用 uv ，本篇教學範例將使用 uv 作為 Python 及專案環境管理工具，並在專案中使用 Shioaji API。
+
+延伸筆記
+
+[`uv`](https://docs.astral.sh/uv/) 是跨平台管理 python 環境及專案環境管理工具的最佳解決方案。
+
+### 安裝 uv
+
+指令
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+```
+
+```
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+```
+
+更多安裝與使用方式請參考 [uv 官方文件](https://docs.astral.sh/uv/)
+
+## 創建專案環境
+
+首先，先創建一個名為 `sj-trading` 的專案
+
+```
+uv init sj-trading --package --app --vcs git
+cd sj-trading
+
+```
+
+創建出來的專案路徑如下
+
+```
+sj-trading
+├── README.md
+├── pyproject.toml
+└── src
+    └── sj_trading
+        └── __init__.py
+
+```
+
+加入 shioaji 套件到專案中
+
+```
+uv add shioaji
+
+```
+
+接著打開 `pyproject.toml` 檔案將會看到以下內容
+
+```
+[project]
+name = "sj-trading"
+version = "0.1.0"
+description = "Shioaji Trading"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "shioaji>=1.2.5",
+]
+
+[project.scripts]
+hello = "sj_trading:hello"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+```
+
+專案中有一個 `hello` 指令，代表我們已經成功可以執行 hello 指令
+
+執行 hello 指令
+
+```
+uv run hello
+
+```
+
+輸出
+
+```
+Hello from sj-trading!
+
+```
+
+接著打開 `src/sj_trading/__init__.py` 檔案，將以下內容複製貼上
+
+```
+import shioaji as sj
+
+def hello():
+    get_shioaji_client()
+
+
+def get_shioaji_client() -> sj.Shioaji:
+    api =  sj.Shioaji()
+    print("Shioaji API created")
+    return api
+
+```
+
+執行指令
+
+```
+uv run hello
+
+```
+
+輸出
+
+```
+Shioaji API created
+
+```
+
+這邊最基本的環境安裝就完成可以開始使用了。
+
+### 使用 Jupyter 環境（可選）
+
+加入 ipykernel 到專案的開發依賴
+
+```
+uv add --dev ipykernel
+
+```
+
+將專案使用環境加入到 Jupyter 的 kernel
+
+```
+uv run ipython kernel install --user --name=sj-trading
+
+```
+
+啟動 Jupyter
+
+```
+uv run --with jupyter jupyter lab
+
+```
+
+在 jupyter 中創建 dev.ipynb 檔案，就可以選擇 `sj-trading` 的 kernel 來執行指令
+
+剛剛我們寫好的 `hello` 指令就可以在這邊執行了
+
+如果已經開好戶可以跳過下一章直接前往 [金鑰與憑證申請](../../tutor/prepare/token/) 取得 API Key 與憑證。
+
+商品檔將在很多地方被使用，例如下單、訂閱行情...等。
+
+商品檔每日於以下時間更新，請留意下載時機。
+
+商品檔更新資訊
+
+- 07:50 期貨商品檔更新
+- 08:00 全市場商品檔更新
+- 14:45 期貨夜盤商品檔更新
+- 17:15 期貨夜盤商品檔更新
+
+### 取得商品檔
+
+下方提供兩種方法取得商品檔：
+
+**方法 1**
+
+[登入](../../tutor/login)成功後，將開始下載商品檔。但這個下載過程將不會影響其他的操作。若您想了解是否下載完成，可利用`Contracts.status`去得到下載狀態。`contracts_timeout` 設定為10000，它將等待10秒下載商品檔。
+
+In
+
+```
+import shioaji as sj
+api = sj.Shioaji()
+api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY",
+    contracts_timeout=10000,
+)
+
+```
+
+**方法 2**
+
+若不想在登入時下載商品檔，將`fetch_contract` 設定為`False`。利用 `fetch_contracts` 下載商品檔
+
+In
+
+```
+import shioaji as sj
+api = sj.Shioaji()
+api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY",
+    fetch_contract=False,
+)
+api.fetch_contracts(contract_download=True)
+
+```
+
+商品檔由 server 在 `shioaji server start` 啟動時自動完成載入（詳見[登入](../login/)頁面的 server 啟動 log），使用者無須額外操作。
+
+### 商品檔資訊
+
+目前我們所提供台股市場的商品包含：證券、期貨、選擇權以及指數。可從下列方法更詳細得到我們所提供的商品。
+
+Contract
+
+```
+security_type (str): 商品類型 {STK, FUT, OPT, IND}
+exchange (str): 交易所
+code (str): 商品代碼
+symbol (str): 符號
+name (str): 商品名稱
+category (str): 類別
+currency (str): 計價幣別
+delivery_month (str): 交割月份 (FUT/OPT)
+delivery_date (str): 結算日 (FUT/OPT)
+strike_price (float): 履約價 (OPT)
+option_right (str): 買賣權別 (OPT)
+underlying_kind (str): 標的類型 (FUT/OPT)
+underlying_code (str): 標的商品代碼 (OPT)
+unit (float): 單位
+multiplier (int): 契約乘數 (FUT/OPT)
+limit_up (float): 漲停價
+limit_down (float): 跌停價
+reference (float): 參考價
+update_date (str): 更新日期
+margin_trading_balance (int): 融資餘額 (STK)
+short_selling_balance (int): 融券餘額 (STK)
+day_trade (str): 可否當沖 {Yes, No, OnlyBuy} (STK)
+target_code (str): 對應實際商品代碼，僅連續月（如 TXFR1/R2）才有值 (FUT)
+
+```
+
+- 未使用的欄位為空字串或 0
+- Python 的 SDK 物件 repr 中，值為 0 的欄位會被省略
+
+**查詢所有商品檔**
+
+In
+
+```
+api.Contracts
+
+```
+
+Out
+
+```
+Contracts(Indexs=(OTC, TAIFEX, TSE), Stocks=(OES, OTC, TSE), Futures=(BRF, BTF, CAF, CBF, CCF, CDF, CEF, CFF, CGF, CHF, CJF, CKF, CLF, CMF, CNF, CQF, CRF, CSF, CUF, CWF, CXF, CYF, CZF, DAF, DBF, DCF, DE1, DEF, DFF, DGF, DHF, DIF, DJF, DKF, DLF, DNF, DOF, DPF, DQF, DSF, DVF, DWF, DXF, DYF, DZF, E4F, ECF, ECI, ECL, EEF, EGF, EHF, EKF, EMF, EOF, EPF, ESF, ESI, ESL, EXF, EYF, EZF, F1F, FBF, FCF, FEF, FFF, FGF, FKF, FNF, FQF, FRF, FSF, FTF, FVF, FWF, FXF, FYF, FZF, G2F, GAF, GCF, GDF, GHF, GIF, GJF, GKF, GLF, GMF, GNF, GOF, GRF, GTF, GUF, GVF, GWF, GXF, GYF, GZF, HA1, HAF, HBF, HCF, HH1, HHF, HIF, HL1, HLF, HOF, HQF, HSF, IAF, IHF, IIF, IJF, IMF, IOF, IPF, IQF, IR1, IRF, ITF, IX1, IXF, IYF, IZF, JBF, JFF, JMF, JNF, JPF, JSF, JW1, JWF, JXF, JZF, KAF, KBF, KCF, KDF, KEF, KFF, KGF, KIF, KKF, KLF, KOF, KPF, KSF, KUF, KWF, LBF, LCF, LEF, LIF, LMF, LOF, LQF, LRF, LTF, LUF, LVF, LWF, LXF, LYF, M1F, MBF, MJF, MKF, MQF, MVF, MX4, MXF, MYF, NAF, NBF, NCF, NDF, NEF, NGF, NIF, NJF, NKF, NKI, NKL, NLF, NMF, NOF, NQF, NSF, NUF, NVF, NWF, NYF, OAF, OBF, ODF, OEF, OHF, OJF, OKF, OLF, OMF, OOF, OPF, OQF, ORF, OSF, OTF, OUF, OVF, OWF, OXF, OYF, OZF, PAF, PBF, PCF, PDF, PEF, PFF, PGF, PHF, PIF, PJF, PKF, PL1, PLF, PMF, PNF, PPF, PQF, PRF, PSF, PTF, PUF, PVF, PWF, PXF, PYF, PZF, QAF, QBF, QCF, QDF, QEF, QFF, QGF, QHF, QIF, QJF, QKF, QLF, QMF, QNF, QOF, QPF, QQF, QRF, QSF, QTF, QUF, QV1, QVF, QWF, QXF, QYF, QZF, RAF, RBF, RCF, RDF, REF, RFF, RGF, RHF, RIF, RJF, RKF, RLF, RNF, ROF, RPF, RRF, RSF, RTF, RUF, RVF, RWF, RXF, RYF, RZF, SAF, SBF, SCF, SDF, SEF, SFF, SGF, SHF, SIF, SJF, SKF, SLF, SMF, SNF, SOF, SPF, SQF, SRF, SSF, SUF, SVF, SWF, SXF, SYF, SZF, TGF, TJF, TMF, TWN, TXF, UAF, UBF, UCF, UDF, UEF, UFF, UGF, UHF, UIF, UJF, UKF, ULF, UMF, UNF, UOF, UPF, UQF, URF, USF, UTF, UUF, UVF, UWF, UXF, UYF, UZF, VAF, VBF, VCF, VDF, VEF, VFF, VGF, VHF, VIF, VJF, VKF, XAF, XBF, XEF, XIF, XJF, YMF, YMI, YML, ZEF, ZFF), Options=(CAO, CBO, CCO, CDA, CDO, CEO, CFO, CGO, CHO, CKO, CMO, CNO, CSO, CZO, DFO, DGO, DHO, DJO, DKO, DQO, DSO, DVO, DXO, GIO, GXO, HCO, HSO, IJO, IRO, NYO, OAO, OBO, OJO, OKO, OOO, OZO, TEO, TFO, TGO, TX4, TXO, TXX, TXY), status=<FetchStatus.Fetched: 'Fetched'>)
+
+```
+
+請見下方各分類小節（證券 / 期貨 / 選擇權 / 指數）。
+
+**查詢單一商品檔**
+
+透過 `api.Contracts` 的分類存取單一商品檔，回傳對應的 SDK 物件（Stock / Future / Option / Index）。
+
+#### 證券
+
+In
+
+```
+api.Contracts.Stocks["2330"]
+# 或 api.Contracts.Stocks.TSE.TSE2330
+
+```
+
+Out
+
+```
+Stock(
+    exchange=<Exchange.TSE: 'TSE'>,
+    code='2330',
+    symbol='TSE2330',
+    name='台積電',
+    category='24',
+    unit=1000.0,
+    limit_up=2440.0,
+    limit_down=2000.0,
+    reference=2220.0,
+    update_date='2026/05/14',
+    margin_trading_balance=167,
+    day_trade=<DayTrade.Yes: 'Yes'>,
+)
+
+```
+
+#### 期貨
+
+In
+
+```
+api.Contracts.Futures["TXFR1"]
+# 或 api.Contracts.Futures.TXF.TXFR1
+
+```
+
+Out
+
+```
+Future(
+    code='TXFR1',
+    symbol='TXFR1',
+    name='臺股期貨近月',
+    category='TXF',
+    delivery_month='202605',
+    delivery_date='2026/05/20',
+    underlying_kind='I',
+    unit=1.0,
+    limit_up=45799.0,
+    limit_down=37473.0,
+    reference=41636.0,
+    update_date='2026/05/15',
+    target_code='TXFE6',
+)
+
+```
+
+#### 選擇權
+
+In
+
+```
+api.Contracts.Options["TXO20260532400C"]
+
+```
+
+Out
+
+```
+Option(
+    code='TXO32400E6',
+    symbol='TXO20260532400C',
+    name='臺指選擇權F505月 32400C',
+    category='TXO',
+    delivery_month='202605',
+    delivery_date='2026/05/20',
+    strike_price=32400.0,
+    option_right=<OptionRight.Call: 'C'>,
+    underlying_kind='I',
+    unit=1.0,
+    limit_up=13400.0,
+    limit_down=5060.0,
+    reference=9230.0,
+    update_date='2026/05/15',
+)
+
+```
+
+#### 指數
+
+In
+
+```
+api.Contracts.Indexs.TSE["001"]
+# 或 api.Contracts.Indexs.TSE.TSE001
+
+```
+
+Out
+
+```
+Index(
+    exchange=<Exchange.TSE: 'TSE'>,
+    code='001',
+    symbol='TSE001',
+    name='加權指數',
+)
+
+```
+
+`shioaji` CLI 沒有查詢商品檔的命令，請使用 Python 或 HTTP API。
+
+使用 `curl` 對 server 發送 GET 請求，取得單一商品檔。
+
+- URL 格式：`/api/v1/data/contracts/{code}?security_type=<TYPE>`
+- `{code}`：商品代碼
+- `security_type`：商品類型（`STK` / `FUT` / `OPT` / `IND`）
+
+**證券**
+
+In
+
+```
+curl "http://localhost:8080/api/v1/data/contracts/2330?security_type=STK"
+
+```
+
+Out
+
+```
+{"security_type":"STK","exchange":"TSE","code":"2330","symbol":"TSE2330","name":"台積電","category":"24","currency":"TWD","delivery_month":"","delivery_date":"","strike_price":0.0,"option_right":"","underlying_kind":"","underlying_code":"","unit":1000.0,"multiplier":0,"limit_up":2440.0,"limit_down":2000.0,"reference":2220.0,"update_date":"2026/05/14","margin_trading_balance":167,"short_selling_balance":0,"day_trade":"Yes","target_code":""}
+
+```
+
+**期貨**
+
+In
+
+```
+curl "http://localhost:8080/api/v1/data/contracts/TXFR1?security_type=FUT"
+
+```
+
+Out
+
+```
+{"security_type":"FUT","exchange":"TAIFEX","code":"TXFR1","symbol":"TXFR1","name":"臺股期貨近月","category":"TXF","currency":"TWD","delivery_month":"202605","delivery_date":"2026/05/20","strike_price":0.0,"option_right":"","underlying_kind":"I","underlying_code":"","unit":1.0,"multiplier":0,"limit_up":45799.0,"limit_down":37473.0,"reference":41636.0,"update_date":"2026/05/15","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":"TXFE6"}
+
+```
+
+**選擇權**
+
+In
+
+```
+curl "http://localhost:8080/api/v1/data/contracts/TXO20260532400C?security_type=OPT"
+
+```
+
+Out
+
+```
+{"security_type":"OPT","exchange":"TAIFEX","code":"TXO32400E6","symbol":"TXO20260532400C","name":"臺指選擇權F505月 32400C","category":"TXO","currency":"TWD","delivery_month":"202605","delivery_date":"2026/05/20","strike_price":32400.0,"option_right":"C","underlying_kind":"I","underlying_code":"","unit":1.0,"multiplier":0,"limit_up":13400.0,"limit_down":5060.0,"reference":9230.0,"update_date":"2026/05/15","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":""}
+
+```
+
+**指數**
+
+In
+
+```
+curl "http://localhost:8080/api/v1/data/contracts/001?security_type=IND"
+
+```
+
+Out
+
+```
+{"security_type":"IND","exchange":"TSE","code":"001","symbol":"TSE001","name":"加權指數","category":"","currency":"TWD","delivery_month":"","delivery_date":"","strike_price":0.0,"option_right":"","underlying_kind":"","underlying_code":"","unit":0.0,"multiplier":0,"limit_up":0.0,"limit_down":0.0,"reference":0.0,"update_date":"","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":""}
+
+```
+
+為避免影響其他使用者連線，請遵守以下使用規範。
+
+## 流量限制
+
+流量
+
+- 現貨（僅限整股交易，零股不納入計算）：
+
+  | 近 30 日使用 API 成交金額 | 每日流量限制 | | --- | --- | | 0 | 500MB | | 1 - 1 億 | 2GB | | > 1 億 | 10GB |
+
+- 期貨：
+
+  | 近 30 日使用 API 成交金額 | 每日流量限制 | | --- | --- | | 0 | 500MB | | 1 - 大台 1000 口 / 小台 4000 口 | 2GB | | > 大台 1000 口 / 小台 4000 口 | 10GB |
+
+提醒
+
+流量於開盤日早上 8:00 重置。
+
+## 流量及連線數查詢
+
+UsageStatus
+
+```
+connections (int):     連線數量
+bytes (int):           已使用流量
+limit_bytes (int):     每日流量限制
+remaining_bytes (int): 剩餘可使用流量
+
+```
+
+In
+
+```
+api.usage()
+
+```
+
+Out
+
+```
+UsageOut(connections=2, bytes=43883999, limit_bytes=2147483648, remaining_bytes=2103599649)
+
+```
+
+**換算成 MB**
+
+In
+
+```
+usage = api.usage()
+print(f"已用 {usage.bytes / 1024 / 1024:.2f} MB / "
+      f"上限 {usage.limit_bytes / 1024 / 1024:.0f} MB / "
+      f"剩餘 {usage.remaining_bytes / 1024 / 1024:.2f} MB")
+
+```
+
+Out
+
+```
+已用 41.85 MB / 上限 2048 MB / 剩餘 2006.15 MB
+
+```
+
+In
+
+```
+shioaji auth usage
+
+```
+
+Out
+
+```
+API Usage
+  Connections:  2
+  Data Used:    41.9 MB / 2.00 GB  [░░░░░░░░░░░░░░░░░░░░]  2.0%
+  Remaining:    1.96 GB
+
+```
+
+In
+
+```
+curl http://localhost:8080/api/v1/auth/usage
+
+```
+
+Out
+
+```
+{
+  "connections": 2,
+  "bytes": 43885469,
+  "limit_bytes": 2147483648,
+  "remaining_bytes": 2103598179
+}
+
+```
+
+## 次數限制
+
+次數
+
+- 行情：
+
+  `credit_enquires`、`short_stock_sources`、`snapshots`、`ticks`、`kbars`
+
+  - 以上查詢總次數 5 秒上限 50 次
+  - 盤中查詢 `ticks` 次數不得超過 10 次
+  - 盤中查詢 `kbars` 次數不得超過 270 次
+
+- 帳務：
+
+  `list_profit_loss_detail`、`account_balance`、`list_settlements`、`list_profit_loss`、`list_positions`、`margin`
+
+  - 以上查詢總次數 5 秒上限 25 次
+
+- 委託：
+
+  `place_order`、`update_status`、`update_qty`、`update_price`、`cancel_order`
+
+  - 以上查詢總次數 10 秒上限 250 次
+
+- 訂閱數：
+
+  - `api.subscribe()` 數量上限為 200 個
+
+- 連線：
+
+  - 同一永豐金證券 `person_id` 僅可使用最多 5 個連線（`api.login()` 即建立一個連線）
+
+- 登入：
+
+  - `api.login()` 一天上限 1000 次
+
+## 違規處置
+
+Warn
+
+- 若流量超過限制，行情（`ticks`、`snapshots`、`kbars`）類查詢將回傳空值，其他功能不受影響
+- 若使用量超過限制，將暫停服務一分鐘
+- 若當日連續多次超過限制，本公司將暫停該 IP 及 ID 使用權
+- 若 ID 被暫停使用，請洽 Shioaji 管理人員
+
+登入必須擁有永豐金帳戶。若你還沒有擁有永豐金帳戶，可詳見[開戶](../prepare/open_account/)。
+
+## 登入
+
+API Key
+
+Shioaji 使用 API Key 作為登入方式，申請可參見 [金鑰與憑證申請](../prepare/token/)。
+
+In
+
+```
+import shioaji as sj
+api = sj.Shioaji(simulation=False)  # 是否進入模擬模式
+api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY"
+)
+
+```
+
+Out
+
+```
+# 與 Solace 行情伺服器連線建立成功
+Response Code: 0 | Event Code: 0 | Info: host '<IP>:80', hostname '<IP>:80' IP <IP>:80 (host 1 of 1) (host connection attempt 1 of 1) (total connection attempt 1 of 2) | Event: Session up
+
+# 登入後取得的帳戶列表
+[FutureAccount(person_id='', broker_id='', account_id='', signed=true, username=''),
+ IntlAccount(person_id='', broker_id='', account_id='', signed=false, username=''),
+ StockAccount(person_id='', broker_id='', account_id='', signed=true, username='')]
+
+```
+
+Login Arguments
+
+```
+api_key (str): API 金鑰
+secret_key (str): 密鑰
+fetch_contract (bool): 是否從快取中讀取商品檔或從伺服器下載商品檔 (預設值: True)
+contracts_timeout (int): 獲取商品檔 timeout (預設值: 0 ms)
+contracts_cb (typing.Callable): 獲取商品檔 callback (預設值: None)
+subscribe_trade (bool): 是否訂閱委託/成交回報 (預設值: True)
+receive_window (int): 登入動作有效執行時間 (預設值: 30,000 毫秒)
+
+```
+
+注意
+
+若收到 **Sign data is timeout**，表示登入超過有效執行時間，可能原因：
+
+- 系統時間與伺服器時間相差過大 → 校準系統時間
+- 登入執行時間超過 `receive_window` → 將 `receive_window` 調高（預設 30,000 ms)
+
+**獲取商品檔 Callback**
+
+可使用 `contracts_cb` 監看商品檔載入進度：
+
+In
+
+```
+import shioaji as sj
+api = sj.Shioaji()
+api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY",
+    contracts_cb=lambda security_type: print(f"{repr(security_type)} fetch done.")
+)
+
+```
+
+Out
+
+```
+[
+    FutureAccount(person_id='', broker_id='', account_id='', signed=True, username=''),
+    StockAccount(person_id='', broker_id='', account_id='', signed=True, username='')
+]
+<SecurityType.Index: 'IND'> fetch done.
+<SecurityType.Future: 'FUT'> fetch done.
+<SecurityType.Option: 'OPT'> fetch done.
+<SecurityType.Stock: 'STK'> fetch done.
+
+```
+
+In
+
+```
+# .env（放在執行目錄）應包含：
+SJ_API_KEY=YOUR_API_KEY                # 請修改此處
+SJ_SEC_KEY=YOUR_SECRET_KEY             # 請修改此處
+SJ_PRODUCTION=true                     # 是否進入正式模式
+
+# 啟動 server（自動讀取 .env，完成登入）
+shioaji server start
+
+```
+
+Out
+
+```
+# 讀取 .env 中的 API 金鑰與設定
+Loaded environment variables from .env file
+INFO shioaji::cli::server: Starting Shioaji API Server...
+
+# 首次登入（無 cached token）
+INFO shioaji::api::api_v1::auth::token_login: No cached token available, performing new login
+INFO shioaji::api::api_v1::auth::token_login: Stored new token in slot 1
+
+# 載入商品檔進度
+INFO shioaji::api::api_v1::contracts::api: Fetched 127 IND contracts (1 pages)
+INFO shioaji::api::api_v1::contracts::api: Fetched 42787 STK contracts (9 pages)
+INFO shioaji::api::api_v1::contracts::api: Fetched 2489 FUT contracts (1 pages)
+INFO shioaji::api::api_v1::contracts::api: Fetched 8653 OPT contracts (2 pages)
+INFO shioaji::server: Loaded 54056 contracts
+
+# CA 憑證載入
+INFO shioaji::server: CA certificate activated successfully
+
+# 認證成功，登入完成
+INFO shioaji::cli::server: Successfully authenticated with Shioaji API
+
+# HTTP server 啟動完成，可以開始接收請求
+INFO shioaji::cli::server: 🚀 Shioaji API Server is running on http://127.0.0.1:8080
+INFO salvo_core::server: listening [HTTP/1.1] on http://127.0.0.1:8080
+
+```
+
+Login Arguments
+
+```
+SJ_API_KEY      API 金鑰（必填）
+SJ_SEC_KEY      密鑰（必填）
+SJ_PRODUCTION   是否進入正式模式 (預設值: false)
+
+```
+
+注意
+
+若收到 **Sign data is timeout**，表示登入超過有效執行時間。請校準系統時間。
+
+### 訂閱委託/成交回報
+
+我們提供 2 個方式讓您可以調整訂閱委託/成交回報。首先是於 `login` 的參數 `subscribe_trade`，預設值為 `True`，會自動為您訂閱所有帳號的委託/成交回報。
+
+In
+
+```
+import shioaji as sj
+api = sj.Shioaji()
+api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY",
+    subscribe_trade=True
+)
+
+```
+
+另一個方式是，對特定帳號使用 API `subscribe_trade` 及 `unsubscribe_trade`，即可訂閱或取消訂閱委託/成交回報。
+
+subscribe trade
+
+```
+api.subscribe_trade(account)
+
+```
+
+unsubscribe trade
+
+```
+api.unsubscribe_trade(account)
+
+```
+
+請使用 HTTP
+
+Shioaji 1.5.x CLI 未提供 `subscribe-trade` subcommand，請使用 HTTP。
+
+server 啟動時不自動訂閱，需逐帳號動態訂閱。
+
+subscribe trade
+
+```
+curl -X POST http://localhost:8080/api/v1/auth/subscribe_trade \
+  -H "Content-Type: application/json" \
+  -d '{"broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+unsubscribe trade
+
+```
+curl -X POST http://localhost:8080/api/v1/auth/unsubscribe_trade \
+  -H "Content-Type: application/json" \
+  -d '{"broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+## 帳號
+
+依 `account_type` 區分為三種：
+
+- `S`：證券帳號（`StockAccount`）
+- `F`：期貨帳號（`FutureAccount`）
+- `H`：複委託帳號（註：shioaji 尚未支援 API 下單）
+
+#### 帳號列表
+
+In
+
+```
+accounts = api.list_accounts()
+accounts
+
+```
+
+Out
+
+```
+[
+    FutureAccount(person_id='PERSON_ID_1', broker_id='BROKER_ID_1', account_id='ACCOUNT_ID_1', signed=True, username='USERNAME_1'),
+    IntlAccount(person_id='PERSON_ID_1', broker_id='BROKER_ID_2', account_id='ACCOUNT_ID_2', signed=False, username='USERNAME_1'),
+    StockAccount(person_id='PERSON_ID_1', broker_id='BROKER_ID_2', account_id='ACCOUNT_ID_3', signed=True, username='USERNAME_1')
+]
+
+```
+
+- 若 `signed` 在帳號列表中未出現，如同 `ACCOUNT_ID_2`，代表該帳號尚未簽署或尚未完成在測試模式中的測試報告。可參見 [API 簽署](../prepare/terms/)。
+
+#### 預設帳號
+
+In
+
+```
+print(api.stock_account)
+print(api.futopt_account)
+
+```
+
+Out
+
+```
+StockAccount(person_id='PERSON_ID_1', broker_id='BROKER_ID_2', account_id='ACCOUNT_ID_3', signed=True, username='USERNAME_1')
+FutureAccount(person_id='PERSON_ID_1', broker_id='BROKER_ID_1', account_id='ACCOUNT_ID_1', signed=True, username='USERNAME_1')
+
+```
+
+#### 設定預設帳號
+
+In
+
+```
+# 預設的期貨帳號從 ACCOUNT_ID_1 轉換成 ACCOUNT_ID_2
+api.set_default_account(accounts[1])
+print(api.futopt_account)
+
+```
+
+Out
+
+```
+FutureAccount(person_id='PERSON_ID_2', broker_id='BROKER_ID_2', account_id='ACCOUNT_ID_2', username='USERNAME_2')
+
+```
+
+**帳號列表**
+
+In
+
+```
+shioaji auth accounts
+
+```
+
+Out
+
+```
+[3]{account_type,person_id,broker_id,account_id,signed,username}:
+  F,PERSON_ID_1,BROKER_ID_1,"ACCOUNT_ID_1",true,USERNAME_1
+  H,PERSON_ID_1,BROKER_ID_2,"ACCOUNT_ID_2",false,USERNAME_1
+  S,PERSON_ID_1,BROKER_ID_2,"ACCOUNT_ID_3",true,USERNAME_1
+
+```
+
+- 若 `signed` 在帳號列表中未出現，代表該帳號尚未簽署或尚未完成在測試模式中的測試報告。可參見 [API 簽署](../prepare/terms/)。
+
+**預設帳號**
+
+server 啟動時自動挑列表中第一個證券 / 期貨帳號作為預設帳號；下單時 `--account` 不指定即使用預設；若要指定帳號，請帶 `--account BROKER-ACCOUNT`。
+
+**帳號列表**
+
+In
+
+```
+curl http://localhost:8080/api/v1/auth/accounts
+
+```
+
+Out
+
+```
+[{"account_type":"F","person_id":"PERSON_ID_1","broker_id":"BROKER_ID_1","account_id":"ACCOUNT_ID_1","signed":true,"username":"USERNAME_1"},{"account_type":"H","person_id":"PERSON_ID_1","broker_id":"BROKER_ID_2","account_id":"ACCOUNT_ID_2","signed":false,"username":"USERNAME_1"},{"account_type":"S","person_id":"PERSON_ID_1","broker_id":"BROKER_ID_2","account_id":"ACCOUNT_ID_3","signed":true,"username":"USERNAME_1"}]
+
+```
+
+- 若 `signed` 在帳號列表中未出現，代表該帳號尚未簽署或尚未完成在測試模式中的測試報告。可參見 [API 簽署](../prepare/terms/)。
+
+**預設帳號**
+
+server 啟動時自動挑列表中第一個證券 / 期貨帳號作為預設帳號；下單 request 中 `account` 不帶 `broker_id` / `account_id` 即使用預設；若要指定帳號，請帶 `broker_id` + `account_id`。
+
+## 登出
+
+登出功能將關閉客戶端及服務端之間的連接。為了提供優質的服務，我們從 2021/08/06 開始[限制](../limit/)連線數。在不使用的時候終止程式是一個良好的習慣。
+
+In
+
+```
+api.logout()
+
+```
+
+Out
+
+```
+True
+
+```
+
+停止 `shioaji server start` 啟動的 daemon：
+
+```
+shioaji server stop
+
+```
+
+使用者能先在模擬環境熟悉我們所提供的服務，可避免在正式環境操作失誤造成財物的損失。以下說明如何進入模擬環境。
+
+## 進入模擬環境
+
+```
+api = sj.Shioaji(simulation=True)  # 模擬模式
+accounts = api.login(
+    api_key="YOUR_API_KEY",     # 請修改此處
+    secret_key="YOUR_SECRET_KEY"  # 請修改此處
+)
+
+```
+
+```
+# .env（放在執行目錄）應包含：
+SJ_API_KEY=YOUR_API_KEY                # 請修改此處
+SJ_SEC_KEY=YOUR_SECRET_KEY             # 請修改此處
+SJ_PRODUCTION=false                    # 模擬模式
+
+# 啟動 server（自動讀取 .env，完成登入）
+shioaji server start
+
+```
+
+```
+# .env（放在執行目錄）應包含：
+SJ_API_KEY=YOUR_API_KEY                # 請修改此處
+SJ_SEC_KEY=YOUR_SECRET_KEY             # 請修改此處
+SJ_PRODUCTION=false                    # 模擬模式
+
+# 啟動 server（在 terminal 執行，自動讀取 .env，完成登入）
+shioaji server start
+
+```
+
+## 可使用的 APIs
+
+行情資料
+
+```
+1. quote.subscribe
+2. quote.unsubscribe
+3. ticks
+4. kbars
+5. snapshots
+6. short_stock_sources
+7. credit_enquires
+8. scanners
+
+```
+
+下單
+
+```
+1. place_order
+2. update_order
+3. cancel_order
+4. update_status
+5. list_trades
+
+```
+
+帳務
+
+```
+1. list_positions
+2. list_profit_loss
+
+```
+
+用於查詢**現貨交割帳戶**餘額，需要先[登入](../../login)。
+
+提醒
+
+目前僅支援永豐銀行、分戶帳、LINE Bank 查詢。
+
+AccountBalance
+
+```
+api.account_balance?
+
+Signature:
+    api.account_balance(
+        account: shioaji.account.Account = None,
+        timeout: int = 5000,
+        cb: Callable[[shioaji.position.AccountBalance], NoneType] = None,
+    ) -> shioaji.position.AccountBalance
+
+```
+
+Parameters
+
+```
+account: 選填，股票帳戶（省略則使用 api.stock_account）
+timeout: 逾時毫秒
+cb:      選填，callback 函式，timeout=0 時使用
+
+```
+
+AccountBalance
+
+```
+shioaji portfolio balance [--account BROKER_ID-ACCOUNT_ID]
+
+```
+
+Parameters
+
+```
+--account: 選填，BROKER_ID-ACCOUNT_ID 格式（例如 9A00-1234567），省略則使用預設股票帳戶
+
+```
+
+AccountBalance
+
+```
+POST /api/v1/portfolio/account_balance
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 帳戶類型，固定為 "S"
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+## 屬性
+
+AccountBalance
+
+```
+status (FetchStatus): 資料回傳狀態
+acc_balance (float):  餘額
+date (str):           查詢時間
+errmsg (str):         錯誤訊息
+
+```
+
+## 範例
+
+In
+
+```
+api.account_balance()
+
+```
+
+Out
+
+```
+AccountBalance(
+    acc_balance=100000,
+    date='2026-05-19 09:05:30.873436',
+    errmsg=''
+)
+
+```
+
+**指定帳戶**
+
+In
+
+```
+api.account_balance(account=api.stock_account)
+
+```
+
+In
+
+```
+shioaji portfolio balance
+
+```
+
+Out
+
+```
+acc_balance: 100000
+date: 2026-05-19 09:08:53.786742
+errmsg: ""
+
+```
+
+**指定帳戶**
+
+In
+
+```
+shioaji portfolio balance --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/account_balance \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+```
+
+Out
+
+```
+{"acc_balance":100000.0,"date":"2026-05-19 09:21:10.085711","errmsg":""}
+
+```
+
+**指定帳戶**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/account_balance \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+**Warning**: The features of this page will be removed in the future.
+
+### Account Margin
+
+In
+
+```
+api.get_account_margin?
+
+```
+
+Out
+
+```
+Signature: api.get_account_margin(currency='NTD', margin_type='1', account={})
+Docstring:
+query margin    currency: {NTX, USX, NTD, USD, HKD, EUR, JPY, GBP}
+the margin calculate in which currency
+    - NTX: 約當台幣
+    - USX: 約當美金
+    - NTD: 新台幣
+    - USD: 美元
+    - HKD: 港幣
+    - EUR: 歐元
+    - JPY: 日幣
+    - GBP: 英鎊
+margin_type: {'1', '2'}
+    query margin type
+    - 1 : 即時
+    - 2 : 風險
+
+```
+
+In
+
+```
+account_margin = api.get_account_margin()
+account_margin
+
+```
+
+Out
+
+```
+AccountMargin(person_id='PERSON_ID' broker_id='BROKER_ID' account_id='ACC_ID' signed=SIGNED username='USERNAME')
+
+```
+
+directly pass our AccountMargin object to pandas to using your model
+
+In
+
+```
+df_margin = pd.DataFrame(account_margin.data())
+df_margin
+
+```
+
+| | OrderPSecurity | ProfitAccCount | FProfit | FMissConProfit | OMissConProfit | ... | Bapamt | Sapamt | Adps | Adamt | Ybaln | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 0 | 50000.0 | 50000.0 | 0.0 | 0.0 | 0.0 | ... | 0.0 | 0.0 | 0.0 | 0.0 | 50000.0 |
+
+### Get Open Position
+
+In
+
+```
+api.get_account_openposition?
+
+```
+
+Out
+
+```
+Signature: api.get_account_openposition(product_type='0', query_type='0', account={})
+Docstring:
+query open position
+product_type: {0, 1, 2, 3}
+    filter product type of open position
+    - 0: all
+    - 1: future
+    - 2: option
+    - 3: usd base
+query_type: {0, 1}
+    query return with detail or summary
+    - 0: detail
+    - 1: summary
+
+```
+
+In
+
+```
+positions = api.get_account_openposition(query_type='1', account=api.futopt_account)
+positions
+
+```
+
+Out
+
+```
+AccountOpenPosition(person_id='PERSON_ID' broker_id='BROKER_ID' account_id='ACC_ID' signed=SIGNED username='USERNAME')
+
+```
+
+### AccountOpenPosition
+
+In
+
+```
+df_positions = pd.DataFrame(positions.data())
+df_positions
+
+```
+
+| | Account | Code | CodeName | ContractAverPrice | Currency | Date | FlowProfitLoss | MTAMT | OTAMT | OrderBS | OrderNum | OrderType | RealPrice | SettlePrice | SettleProfitLoss | StartSecurity | UpKeepSecurity | Volume | paddingByte | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 0 | FF0020009104000 | TXFA9 | 台指期貨 01 | 9508.4137 | NTD | 00000000 | 4795201.620000 | 6438000.000000 | 8352000.000000 | B | | | 9784.0 | 9784.00 | 4795201.620000 | 8352000.000000 | 6438000.000000 | 87.000000 | |
+
+### Get Settle ProfitLoss
+
+In
+
+```
+api.get_account_settle_profitloss?
+
+```
+
+Out
+
+```
+Signature: api.get_account_settle_profitloss(product_type='0', summary='Y', start_date='', end_date='', currency='', account={})
+Docstring:
+query settlement profit loss
+product_type: {0, 1, 2}
+    filter product type of open position
+    - 0: all
+    - 1: future
+    - 2: option
+summary: {Y, N}
+    query return with detail or summary
+    - Y: summary
+    - N: detail
+start_date: str
+    the start date of query range format with %Y%m%d
+    ex: 20180101
+end_date: str
+    the end date of query range format with %Y%m%d
+    ex: 20180201
+currency: {NTD, USD, HKD, EUR, CAD, BAS}
+    the profit loss calculate in which currency
+    - NTD: 新台幣
+    - USD: 美元
+    - HKD: 港幣
+    - EUR: 歐元
+    - CAD: 加幣 
+    - BAS: 基幣
+
+```
+
+### AccountSettleProfitLoss
+
+In
+
+```
+st_date = (date.today() - timedelta(days=60)).strftime('%Y%m%d')
+settle_profitloss = api.get_account_settle_profitloss(summary='Y', start_date=st_date)
+settle_profitloss
+
+```
+
+```
+df_profitloss = pd.DataFrame(settle_profitloss.data())
+df_profitloss
+
+```
+
+| | account | averagePrice | code | codeName | currency | floatProfitLoss | handCharge | ord_bs | ord_type | ordno | ordno_b | settleAvgPrc | settleDate | settleVolume | tFlag | tdate | tradeProfitLoss | tradeTax | unVolume | volume | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 0 | F0020009104000 | 9900.0 | TXFK8 | 台指期貨 11 | NTD | 460.000000 | 60.000000 | S | 00 | kY002 | kY003 | 9897.0 | 20181022 | 1.000000 | 1 | 20181022 | 600.000000 | 80.000000 | 0.000000 | 1.000000 |
+
+用於查詢**期貨帳戶**保證金，需要先[登入](../../login)。
+
+Margin
+
+```
+api.margin?
+
+Signature:
+    api.margin(
+        account: shioaji.account.Account = None,
+        timeout: int = 5000,
+        cb: Callable[[shioaji.position.Margin], NoneType] = None,
+    ) -> shioaji.position.Margin
+
+```
+
+Parameters
+
+```
+account: 選填，期貨帳戶（省略則使用 api.futopt_account）
+timeout: 逾時毫秒
+cb:      選填，callback 函式，timeout=0 時使用
+
+```
+
+Margin
+
+```
+shioaji portfolio margin [--account BROKER_ID-ACCOUNT_ID]
+
+```
+
+Parameters
+
+```
+--account: 選填，BROKER_ID-ACCOUNT_ID 格式，省略則使用預設期貨帳戶
+
+```
+
+Margin
+
+```
+POST /api/v1/portfolio/margin
+Content-Type: application/json
+
+{
+  "account_type": "F",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 帳戶類型，固定為 "F"
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+## 屬性
+
+Margin
+
+```
+yesterday_balance (float):           前日餘額
+today_balance (float):               今日餘額
+deposit_withdrawal (float):          存提
+fee (float):                         手續費
+tax (float):                         期交稅
+initial_margin (float):              原始保證金
+maintenance_margin (float):          維持保證金
+margin_call (float):                 追繳保證金
+risk_indicator (float):              風險指標
+royalty_revenue_expenditure (float): 權利金收入與支出
+equity (float):                      權益數
+equity_amount (float):               權益總值
+option_openbuy_market_value (float): 未沖銷買方選擇權市值
+option_opensell_market_value (float): 未沖銷賣方選擇權市值
+option_open_position (float):        參考未平倉選擇權損益
+option_settle_profitloss (float):    參考選擇權平倉損益
+future_open_position (float):        未沖銷期貨浮動損益
+today_future_open_position (float):  參考當日未沖銷期貨浮動損益
+future_settle_profitloss (float):    期貨平倉損益
+available_margin (float):            可動用(出金)保證金
+plus_margin (float):                 依「加收保證金指標」所加收之保證金
+plus_margin_indicator (float):       加收保證金指標
+security_collateral_amount (float):  有價證券抵繳總額
+order_margin_premium (float):        委託保證金及委託權利金
+collateral_amount (float):           有價品額
+
+```
+
+## 範例
+
+In
+
+```
+api.margin()
+
+```
+
+Out
+
+```
+Margin(
+    yesterday_balance=60100,
+    today_balance=60100,
+    deposit_withdrawal=0,
+    fee=0,
+    tax=0,
+    initial_margin=0,
+    maintenance_margin=0,
+    margin_call=0,
+    risk_indicator=999,
+    royalty_revenue_expenditure=0,
+    equity=60100,
+    equity_amount=60100,
+    option_openbuy_market_value=0,
+    option_opensell_market_value=0,
+    option_open_position=0,
+    option_settle_profitloss=0,
+    future_open_position=0,
+    today_future_open_position=0,
+    future_settle_profitloss=0,
+    available_margin=60100,
+    plus_margin=0,
+    plus_margin_indicator=0,
+    security_collateral_amount=0,
+    order_margin_premium=0,
+    collateral_amount=0
+)
+
+```
+
+**指定帳戶**
+
+In
+
+```
+api.margin(account=api.futopt_account)
+
+```
+
+In
+
+```
+shioaji portfolio margin
+
+```
+
+Out
+
+```
+yesterday_balance: 60100
+today_balance: 60100
+deposit_withdrawal: 0
+fee: 0
+tax: 0
+initial_margin: 0
+maintenance_margin: 0
+margin_call: 0
+risk_indicator: 999
+royalty_revenue_expenditure: 0
+equity: 60100
+equity_amount: 60100
+option_openbuy_market_value: 0
+option_opensell_market_value: 0
+option_open_position: 0
+option_settle_profitloss: 0
+future_open_position: 0
+today_future_open_position: 0
+future_settle_profitloss: 0
+available_margin: 60100
+plus_margin: 0
+plus_margin_indicator: 0
+security_collateral_amount: 0
+order_margin_premium: 0
+collateral_amount: 0
+
+```
+
+**指定帳戶**
+
+In
+
+```
+shioaji portfolio margin --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/margin \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+```
+
+Out
+
+```
+{
+  "yesterday_balance": 60100.0,
+  "today_balance": 60100.0,
+  "deposit_withdrawal": 0.0,
+  "fee": 0.0,
+  "tax": 0.0,
+  "initial_margin": 0.0,
+  "maintenance_margin": 0.0,
+  "margin_call": 0.0,
+  "risk_indicator": 999.0,
+  "royalty_revenue_expenditure": 0.0,
+  "equity": 60100.0,
+  "equity_amount": 60100.0,
+  "option_openbuy_market_value": 0.0,
+  "option_opensell_market_value": 0.0,
+  "option_open_position": 0.0,
+  "option_settle_profitloss": 0.0,
+  "future_open_position": 0.0,
+  "today_future_open_position": 0.0,
+  "future_settle_profitloss": 0.0,
+  "available_margin": 60100.0,
+  "plus_margin": 0.0,
+  "plus_margin_indicator": 0.0,
+  "security_collateral_amount": 0.0,
+  "order_margin_premium": 0.0,
+  "collateral_amount": 0.0
+}
+
+```
+
+**指定帳戶**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/margin \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+用於查詢**證券／期貨選擇權帳戶**未實現損益，需要先[登入](../../login)。
+
+## 未實現損益
+
+list_positions
+
+```
+api.list_positions?
+
+Signature:
+    api.list_positions(
+        account: shioaji.account.Account = None,
+        unit: shioaji.Unit = <Unit.Common: 'Common'>,
+        timeout: int = 5000,
+        cb: Callable[[List[Union[shioaji.position.StockPosition, shioaji.position.FuturePosition]]], NoneType] = None,
+    ) -> List[Union[shioaji.position.StockPosition, shioaji.position.FuturePosition]]
+
+```
+
+Parameters
+
+```
+account: 選填，證券或期貨選擇權帳戶（省略則使用 api.stock_account）
+unit:    選填，Unit.Common（整股／預設）或 Unit.Share（零股）
+timeout: 逾時毫秒
+cb:      選填，callback 函式，timeout=0 時使用
+
+```
+
+list_positions
+
+```
+shioaji portfolio positions [--account-type S|F] [--unit common|share] [--account BROKER_ID-ACCOUNT_ID]
+
+```
+
+Parameters
+
+```
+--account-type: 選填，S（證券／預設）或 F（期貨選擇權）
+--unit:         選填，common（整股／預設）或 share（零股）
+--account:      選填，BROKER_ID-ACCOUNT_ID 格式，省略則使用預設帳戶
+
+```
+
+list_positions
+
+```
+POST /api/v1/portfolio/position_unit
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "unit": "Common",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 選填，"S"（證券／預設）或 "F"（期貨選擇權）
+unit:         選填，"Common"（整股／預設）或 "Share"（零股）
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+### 證券
+
+StockPosition
+
+```
+id (int):                       部位代碼
+code (str):                     商品代碼
+direction (Action):             買賣別 {Buy: 買, Sell: 賣}
+quantity (int):                 數量
+price (float):                  平均價格
+last_price (float):             目前股價
+pnl (float):                    損益
+yd_quantity (int):              昨日庫存數量
+cond (StockOrderCond):          {Cash: 現股, Netting: 餘額交割, MarginTrading: 融資, ShortSelling: 融券, Emerging: 興櫃}
+margin_purchase_amount (int):   融資金額
+collateral (int):               擔保品
+short_sale_margin (int):        保證金
+interest (int):                 利息
+
+```
+
+#### 整股
+
+In
+
+```
+api.list_positions(account=api.stock_account)
+
+```
+
+Out
+
+```
+[
+    StockPosition(
+        id=0,
+        code='2890',
+        direction=<Action.Buy: 'Buy'>,
+        quantity=1,
+        price=30.0,
+        last_price=31.0,
+        pnl=1000,
+        yd_quantity=1,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        margin_purchase_amount=0,
+        collateral=0,
+        short_sale_margin=0,
+        interest=0,
+    ),
+    StockPosition(
+        id=1,
+        code='2330',
+        direction=<Action.Buy: 'Buy'>,
+        quantity=1,
+        price=2000.0,
+        last_price=1980.0,
+        pnl=-20000,
+        yd_quantity=1,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        margin_purchase_amount=0,
+        collateral=0,
+        short_sale_margin=0,
+        interest=0,
+    ),
+]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+positions = api.list_positions(account=api.stock_account)
+df = pl.DataFrame(p.dict() for p in positions)
+df
+
+```
+
+Out
+
+| id | code | direction | quantity | price | last_price | pnl | yd_quantity | cond | margin_purchase_amount | collateral | short_sale_margin | interest | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 0 | 2890 | Buy | 1 | 30.0 | 31.0 | 1000 | 1 | Cash | 0 | 0 | 0 | 0 | | 1 | 2330 | Buy | 1 | 2000.0 | 1980.0 | -20000 | 1 | Cash | 0 | 0 | 0 | 0 |
+
+#### 零股
+
+In
+
+```
+from shioaji import Unit
+api.list_positions(account=api.stock_account, unit=Unit.Share)
+
+```
+
+Out
+
+```
+[
+    StockPosition(
+        id=0,
+        code='2890',
+        direction=<Action.Buy: 'Buy'>,
+        quantity=1000,
+        price=30.0,
+        last_price=31.0,
+        pnl=1000,
+        yd_quantity=1000,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        margin_purchase_amount=0,
+        collateral=0,
+        short_sale_margin=0,
+        interest=0,
+    ),
+    StockPosition(
+        id=1,
+        code='2330',
+        direction=<Action.Buy: 'Buy'>,
+        quantity=1000,
+        price=2000.0,
+        last_price=1980.0,
+        pnl=-20000,
+        yd_quantity=1000,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        margin_purchase_amount=0,
+        collateral=0,
+        short_sale_margin=0,
+        interest=0,
+    ),
+]
+
+```
+
+**整股**
+
+In
+
+```
+shioaji portfolio positions --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+[2]{id,code,direction,quantity,price,last_price,pnl,yd_quantity,cond,margin_purchase_amount,collateral,short_sale_margin,interest}:
+  0,"2890",Buy,1,30.0,31.0,1000,1,Cash,0,0,0,0
+  1,"2330",Buy,1,2000.0,1980.0,-20000,1,Cash,0,0,0,0
+
+```
+
+**零股**
+
+In
+
+```
+shioaji portfolio positions --unit share --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+[2]{id,code,direction,quantity,price,last_price,pnl,yd_quantity,cond,margin_purchase_amount,collateral,short_sale_margin,interest}:
+  0,"2890",Buy,1000,30.0,31.0,1000,1000,Cash,0,0,0,0
+  1,"2330",Buy,1000,2000.0,1980.0,-20000,1000,Cash,0,0,0,0
+
+```
+
+**整股**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/position_unit \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "id": 0,
+    "code": "2890",
+    "direction": "Buy",
+    "quantity": 1,
+    "price": 30.0,
+    "last_price": 31.0,
+    "pnl": 1000.0,
+    "yd_quantity": 1,
+    "cond": "Cash",
+    "margin_purchase_amount": 0,
+    "collateral": 0,
+    "short_sale_margin": 0,
+    "interest": 0
+  },
+  {
+    "id": 1,
+    "code": "2330",
+    "direction": "Buy",
+    "quantity": 1,
+    "price": 2000.0,
+    "last_price": 1980.0,
+    "pnl": -20000.0,
+    "yd_quantity": 1,
+    "cond": "Cash",
+    "margin_purchase_amount": 0,
+    "collateral": 0,
+    "short_sale_margin": 0,
+    "interest": 0
+  }
+]
+
+```
+
+**零股**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/position_unit \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "unit": "Share", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "id": 0,
+    "code": "2890",
+    "direction": "Buy",
+    "quantity": 1000,
+    "price": 30.0,
+    "last_price": 31.0,
+    "pnl": 1000.0,
+    "yd_quantity": 1000,
+    "cond": "Cash",
+    "margin_purchase_amount": 0,
+    "collateral": 0,
+    "short_sale_margin": 0,
+    "interest": 0
+  },
+  {
+    "id": 1,
+    "code": "2330",
+    "direction": "Buy",
+    "quantity": 1000,
+    "price": 2000.0,
+    "last_price": 1980.0,
+    "pnl": -20000.0,
+    "yd_quantity": 1000,
+    "cond": "Cash",
+    "margin_purchase_amount": 0,
+    "collateral": 0,
+    "short_sale_margin": 0,
+    "interest": 0
+  }
+]
+
+```
+
+### 期貨選擇權
+
+FuturePosition
+
+```
+id (int):           部位代碼
+code (str):         商品代碼
+direction (Action): 買賣別 {Buy: 買, Sell: 賣}
+quantity (int):     數量
+price (float):      平均價格
+last_price (float): 目前價格
+pnl (float):        損益
+
+```
+
+In
+
+```
+api.list_positions(account=api.futopt_account)
+
+```
+
+Out
+
+```
+[
+    FuturePosition(
+        id=0,
+        code='TXO20260620200C',
+        direction=<Action.Buy: 'Buy'>,
+        quantity=3,
+        price=131.0,
+        last_price=126.0,
+        pnl=-750.0,
+    ),
+]
+
+```
+
+In
+
+```
+shioaji portfolio positions --account-type F --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+[1]{id,code,direction,quantity,price,last_price,pnl}:
+  0,"TXO20260620200C",Buy,3,131.0,126.0,-750.0
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/position_unit \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "id": 0,
+    "code": "TXO20260620200C",
+    "direction": "Buy",
+    "quantity": 3,
+    "price": 131.0,
+    "last_price": 126.0,
+    "pnl": -750.0
+  }
+]
+
+```
+
+## 未實現損益 - 明細
+
+`detail_id` 為[未實現損益](#%E6%9C%AA%E5%AF%A6%E7%8F%BE%E6%90%8D%E7%9B%8A)回傳結果中的 `id`，用於查詢該筆部位的明細。
+
+list_position_detail
+
+```
+api.list_position_detail?
+
+Signature:
+    api.list_position_detail(
+        account: shioaji.account.Account = None,
+        detail_id: int = 0,
+        timeout: int = 5000,
+        cb: Callable[[List[Union[shioaji.position.StockPositionDetail, shioaji.position.FuturePositionDetail]]], NoneType] = None,
+    ) -> List[Union[shioaji.position.StockPositionDetail, shioaji.position.FuturePositionDetail]]
+
+```
+
+Parameters
+
+```
+account:   選填，證券或期貨選擇權帳戶（省略則使用 api.stock_account）
+detail_id: 選填，部位 ID（從 list_positions 結果取得）
+timeout:   逾時毫秒
+cb:        選填，callback 函式，timeout=0 時使用
+
+```
+
+list_position_detail
+
+```
+POST /api/v1/portfolio/position_detail
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "detail_id": <int>,
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 選填，"S"（證券／預設）或 "F"（期貨選擇權）
+detail_id:    選填，部位 ID（從 list_positions 結果取得）
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+### 證券
+
+StockPositionDetail
+
+```
+date (str):              交易日期
+code (str):              商品代碼
+quantity (int):          數量
+price (float):           付出成本
+last_price (float):      現值
+dseq (str):              委託書號
+direction (Action):      買賣別 {Buy: 買, Sell: 賣}
+pnl (float):             損益
+currency (Currency):     幣別 {TWD, USD, HKD, EUR, CAD, BAS}
+fee (float):             交易手續費
+cond (StockOrderCond):   {Cash: 現股, Netting: 餘額交割, MarginTrading: 融資, ShortSelling: 融券, Emerging: 興櫃}
+ex_dividends (int):      除息金額
+interest (int):          利息
+margintrading_amt (int): 融資金額
+collateral (int):        擔保品
+
+```
+
+In
+
+```
+api.list_position_detail(account=api.stock_account, detail_id=0)
+
+```
+
+Out
+
+```
+[
+    StockPositionDetail(
+        date='2026-05-18',
+        code='2890',
+        quantity=1,
+        price=30000,
+        last_price=31000,
+        dseq='Y1QDH',
+        direction=<Action.Buy: 'Buy'>,
+        pnl=1000,
+        currency=<Currency.TWD: 'TWD'>,
+        fee=100,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        ex_dividends=0,
+        interest=0,
+        margintrading_amt=0,
+        collateral=0,
+    ),
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/position_detail \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "detail_id": 0, "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "date": "2026-05-18",
+    "code": "2890",
+    "quantity": 1,
+    "price": 30000.0,
+    "last_price": 31000.0,
+    "dseq": "Y1QDH",
+    "direction": "Buy",
+    "pnl": 1000.0,
+    "currency": "TWD",
+    "fee": 100.0,
+    "cond": "Cash",
+    "ex_dividends": 0,
+    "interest": 0,
+    "margintrading_amt": 0,
+    "collateral": 0
+  }
+]
+
+```
+
+### 期貨選擇權
+
+FuturePositionDetail
+
+```
+date (str):           交易日期
+code (str):           商品代碼
+quantity (int):       數量
+price (float):        平均價格
+last_price (float):   目前價格
+dseq (str):           委託書號
+direction (Action):   買賣別 {Buy: 買, Sell: 賣}
+pnl (float):          損益
+currency (Currency):  幣別 {TWD, USD, HKD, EUR, CAD, BAS}
+fee (float):          交易手續費
+entry_quantity (int): 新倉數量
+
+```
+
+In
+
+```
+api.list_position_detail(account=api.futopt_account, detail_id=0)
+
+```
+
+Out
+
+```
+[
+    FuturePositionDetail(
+        date='2026-05-21',
+        code='TXO20260620200C',
+        quantity=3,
+        price=131.0,
+        last_price=126.0,
+        dseq='tA0n8',
+        direction=<Action.Buy: 'Buy'>,
+        pnl=-750.0,
+        currency=<Currency.TWD: 'TWD'>,
+        fee=120.0,
+        entry_quantity=3,
+    ),
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/position_detail \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "detail_id": 0, "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "date": "2026-05-21",
+    "code": "TXO20260620200C",
+    "quantity": 3,
+    "price": 131.0,
+    "last_price": 126.0,
+    "dseq": "tA0n8",
+    "direction": "Buy",
+    "pnl": -750.0,
+    "currency": "TWD",
+    "fee": 120.0,
+    "entry_quantity": 3
+  }
+]
+
+```
+
+用於查詢**證券／期貨選擇權帳戶**已實現損益，需要先[登入](../../login)。
+
+## 已實現損益
+
+list_profit_loss
+
+```
+api.list_profit_loss?
+
+Signature:
+    api.list_profit_loss(
+        account: shioaji.account.Account = None,
+        begin_date: str = '',
+        end_date: str = '',
+        unit: shioaji.Unit = <Unit.Common: 'Common'>,
+        timeout: int = 5000,
+        cb: Callable[[List[Union[shioaji.position.StockProfitLoss, shioaji.position.FutureProfitLoss]]], NoneType] = None,
+    ) -> List[Union[shioaji.position.StockProfitLoss, shioaji.position.FutureProfitLoss]]
+
+```
+
+Parameters
+
+```
+account:    證券或期貨選擇權帳戶
+begin_date: 查詢起始日期，格式 YYYY-MM-DD
+end_date:   查詢結束日期，格式 YYYY-MM-DD
+unit:       Unit.Common（整股／預設）或 Unit.Share（零股）
+timeout:    逾時毫秒
+cb:         callback 函式，timeout=0 時使用
+
+```
+
+list_profit_loss
+
+```
+POST /api/v1/portfolio/profit_loss
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "begin_date": "2026-05-01",
+  "end_date": "2026-05-31",
+  "unit": "Common",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: "S"（證券／預設）或 "F"（期貨選擇權）
+begin_date:   查詢起始日期，格式 YYYY-MM-DD
+end_date:     查詢結束日期，格式 YYYY-MM-DD
+unit:         "Common"（整股／預設）或 "Share"（零股）
+broker_id:    券商代碼
+account_id:   帳戶代碼
+person_id:    身分證字號
+
+```
+
+### 證券
+
+StockProfitLoss
+
+```
+id (int):              部位代碼（可用於查詢明細）
+code (str):            商品代碼
+quantity (int):        數量
+pnl (float):           損益
+date (str):            交易日期
+dseq (str):            委託書號
+price (float):         成交價格
+pr_ratio (float):      損益比
+cond (StockOrderCond): {Cash: 現股, Netting: 餘額交割, MarginTrading: 融資, ShortSelling: 融券, Emerging: 興櫃}
+seqno (str):           委託序號
+
+```
+
+In
+
+```
+api.list_profit_loss(api.stock_account, '2026-05-01', '2026-05-21')
+
+```
+
+Out
+
+```
+[
+    StockProfitLoss(
+        id=0,
+        code='2890',
+        quantity=1,
+        pnl=1000,
+        date='2026-05-05',
+        dseq='Y0TR2',
+        price=31,
+        pr_ratio=0.0333,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        seqno='113382',
+    ),
+    StockProfitLoss(
+        id=1,
+        code='2330',
+        quantity=1,
+        pnl=-20000,
+        date='2026-05-06',
+        dseq='Y20K2',
+        price=1980,
+        pr_ratio=-0.01,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+        seqno='184354',
+    ),
+]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+profit_loss = api.list_profit_loss(api.stock_account, '2026-05-01', '2026-05-21')
+df = pl.DataFrame(p.dict() for p in profit_loss)
+df
+
+```
+
+Out
+
+| id | code | quantity | pnl | date | dseq | price | pr_ratio | cond | seqno | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 0 | 2890 | 1 | 1000 | 2026-05-05 | Y0TR2 | 31 | 0.0333 | Cash | 113382 | | 1 | 2330 | 1 | -20000 | 2026-05-06 | Y20K2 | 1980 | -0.01 | Cash | 184354 |
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profit_loss \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "begin_date": "2026-05-01", "end_date": "2026-05-21", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "id": 0,
+    "code": "2890",
+    "quantity": 1,
+    "pnl": 1000.0,
+    "date": "2026-05-05",
+    "dseq": "Y0TR2",
+    "price": 31.0,
+    "pr_ratio": 0.0333,
+    "cond": "Cash",
+    "seqno": "113382"
+  },
+  {
+    "id": 1,
+    "code": "2330",
+    "quantity": 1,
+    "pnl": -20000.0,
+    "date": "2026-05-06",
+    "dseq": "Y20K2",
+    "price": 1980.0,
+    "pr_ratio": -0.01,
+    "cond": "Cash",
+    "seqno": "184354"
+  }
+]
+
+```
+
+### 期貨選擇權
+
+FutureProfitLoss
+
+```
+id (int):           部位代碼（可用於查詢明細）
+code (str):         商品代碼
+quantity (int):     數量
+pnl (float):        損益
+date (str):         交易日期
+entry_price (float): 進倉價格
+cover_price (float): 平倉價格
+tax (int):          交易稅
+fee (int):          交易手續費
+direction (Action): 買賣別 {Buy: 買, Sell: 賣}
+
+```
+
+In
+
+```
+api.list_profit_loss(api.futopt_account, '2026-05-01', '2026-05-21')
+
+```
+
+Out
+
+```
+[
+    FutureProfitLoss(
+        id=0,
+        code='TXO20260620200C',
+        quantity=3,
+        pnl=-750.0,
+        date='2026-05-10',
+        entry_price=131.0,
+        cover_price=126.0,
+        tax=5,
+        fee=120,
+        direction=<Action.Buy: 'Buy'>,
+    ),
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profit_loss \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "begin_date": "2026-05-01", "end_date": "2026-05-21", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "id": 0,
+    "code": "TXO20260620200C",
+    "quantity": 3,
+    "pnl": -750.0,
+    "date": "2026-05-10",
+    "entry_price": 131.0,
+    "cover_price": 126.0,
+    "tax": 5,
+    "fee": 120,
+    "direction": "Buy"
+  }
+]
+
+```
+
+## 已實現損益 - 明細
+
+`detail_id` 為[已實現損益](#%E5%B7%B2%E5%AF%A6%E7%8F%BE%E6%90%8D%E7%9B%8A)回傳結果中的 `id`，用於查詢該筆損益的明細。
+
+list_profit_loss_detail
+
+```
+api.list_profit_loss_detail?
+
+Signature:
+    api.list_profit_loss_detail(
+        account: shioaji.account.Account = None,
+        detail_id: int = 0,
+        unit: shioaji.Unit = <Unit.Common: 'Common'>,
+        timeout: int = 5000,
+        cb: Callable[[List[Union[shioaji.position.StockProfitDetail, shioaji.position.FutureProfitDetail]]], NoneType] = None,
+    ) -> List[Union[shioaji.position.StockProfitDetail, shioaji.position.FutureProfitDetail]]
+
+```
+
+Parameters
+
+```
+account:   證券或期貨選擇權帳戶
+detail_id: 部位 ID（從 list_profit_loss 結果取得）
+unit:      Unit.Common（整股／預設）或 Unit.Share（零股）
+timeout:   逾時毫秒
+cb:        callback 函式，timeout=0 時使用
+
+```
+
+list_profit_loss_detail
+
+```
+POST /api/v1/portfolio/profit_loss_detail
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "detail_id": <int>,
+  "unit": "Common",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: "S"（證券／預設）或 "F"（期貨選擇權）
+detail_id:    部位 ID（從 list_profit_loss 結果取得）
+unit:         "Common"（整股／預設）或 "Share"（零股）
+broker_id:    券商代碼
+account_id:   帳戶代碼
+person_id:    身分證字號
+
+```
+
+### 證券
+
+StockProfitDetail
+
+```
+date (str):                  交易日期
+code (str):                  商品代碼
+quantity (float):            數量
+dseq (str):                  委託書號
+fee (int):                   交易手續費
+tax (int):                   交易稅
+currency (str):              幣別 {TWD, USD, HKD, EUR, CAD, BAS}
+price (float):               成交單價
+cost (int):                  付出成本
+rep_margintrading_amt (int): 償還融資金額
+rep_collateral (int):        償還擔保品
+rep_margin (int):            償還保證金
+shortselling_fee (int):      融券手續費
+ex_dividend_amt (int):       除息金額
+interest (int):              利息
+trade_type (TradeType):      {Common, DayTrade}
+cond (StockOrderCond):       {Cash: 現股, Netting: 餘額交割, MarginTrading: 融資, ShortSelling: 融券, Emerging: 興櫃}
+
+```
+
+In
+
+```
+api.list_profit_loss_detail(api.stock_account, detail_id=0)
+
+```
+
+Out
+
+```
+[
+    StockProfitDetail(
+        date='2026-04-23',
+        code='2890',
+        quantity=1,
+        dseq='Y0O7E',
+        fee=119,
+        tax=0,
+        currency='TWD',
+        price=30.0,
+        cost=30119,
+        rep_margintrading_amt=0,
+        rep_collateral=0,
+        rep_margin=0,
+        shortselling_fee=0,
+        ex_dividend_amt=0,
+        interest=0,
+        trade_type=<TradeType.Common: 'Common'>,
+        cond=<StockOrderCond.Cash: 'Cash'>,
+    ),
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profit_loss_detail \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "detail_id": 0, "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "date": "2026-04-23",
+    "code": "2890",
+    "quantity": 1.0,
+    "dseq": "Y0O7E",
+    "fee": 119,
+    "tax": 0,
+    "currency": "TWD",
+    "price": 30.0,
+    "cost": 30119,
+    "rep_margintrading_amt": 0,
+    "rep_collateral": 0,
+    "rep_margin": 0,
+    "shortselling_fee": 0,
+    "ex_dividend_amt": 0,
+    "interest": 0,
+    "trade_type": "Common",
+    "cond": "Cash"
+  }
+]
+
+```
+
+### 期貨選擇權
+
+FutureProfitDetail
+
+```
+date (str):           交易日期
+code (str):           商品代碼
+quantity (int):       數量
+dseq (str):           委託書號
+fee (float):          交易手續費
+tax (float):          交易稅
+currency (str):       幣別 {TWD, USD, HKD, EUR, CAD, BAS}
+direction (Action):   買賣別 {Buy: 買, Sell: 賣}
+entry_date (str):     進倉日期
+entry_quantity (int): 進倉數量
+entry_seqno (str):    進倉委託序號
+entry_price (float):  進倉價格
+cover_price (float):  平倉價格
+pnl (int):            損益
+
+```
+
+In
+
+```
+api.list_profit_loss_detail(api.futopt_account, detail_id=0)
+
+```
+
+Out
+
+```
+[
+    FutureProfitDetail(
+        date='2026-05-10',
+        code='TXO20260620200C',
+        quantity=3,
+        dseq='tA0n8',
+        fee=120.0,
+        tax=5.0,
+        currency='TWD',
+        direction=<Action.Buy: 'Buy'>,
+        entry_date='2026-05-08',
+        entry_quantity=3,
+        entry_seqno='113382',
+        entry_price=131.0,
+        cover_price=126.0,
+        pnl=-750,
+    ),
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profit_loss_detail \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "detail_id": 0, "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+[
+  {
+    "date": "2026-05-10",
+    "code": "TXO20260620200C",
+    "quantity": 3,
+    "dseq": "tA0n8",
+    "fee": 120.0,
+    "tax": 5.0,
+    "currency": "TWD",
+    "direction": "Buy",
+    "entry_date": "2026-05-08",
+    "entry_quantity": 3,
+    "entry_seqno": "113382",
+    "entry_price": 131.0,
+    "cover_price": 126.0,
+    "pnl": -750
+  }
+]
+
+```
+
+## 已實現損益 - 彙總
+
+用於查詢一段時間內的已實現損益彙總；回傳物件 `ProfitLossSummaryTotal` 包含每檔商品的明細列表 `profitloss_summary` 與總計 `total`。
+
+list_profit_loss_summary
+
+```
+api.list_profit_loss_summary?
+
+Signature:
+    api.list_profit_loss_summary(
+        account: shioaji.account.Account = None,
+        begin_date: str = '',
+        end_date: str = '',
+        timeout: int = 5000,
+        cb: Callable[[ProfitLossSummaryTotal], NoneType] = None,
+    ) -> ProfitLossSummaryTotal
+
+```
+
+Parameters
+
+```
+account:    證券或期貨選擇權帳戶
+begin_date: 查詢起始日期，格式 YYYY-MM-DD
+end_date:   查詢結束日期，格式 YYYY-MM-DD
+timeout:    逾時毫秒
+cb:         callback 函式，timeout=0 時使用
+
+```
+
+list_profit_loss_summary
+
+```
+POST /api/v1/portfolio/profitloss_sum
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "begin_date": "2026-05-01",
+  "end_date": "2026-05-31",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: "S"（證券／預設）或 "F"（期貨選擇權）
+begin_date:   查詢起始日期，格式 YYYY-MM-DD
+end_date:     查詢結束日期，格式 YYYY-MM-DD
+broker_id:    券商代碼
+account_id:   帳戶代碼
+person_id:    身分證字號
+
+```
+
+### 證券
+
+StockProfitLossSummary
+
+```
+code (str):            商品代碼
+quantity (int):        數量
+entry_price (float):   進倉價格
+cover_price (float):   平倉價格
+pnl (float):           損益
+currency (str):        幣別
+entry_cost (int):      進倉金額（不含手續費及交易稅）
+cover_cost (int):      平倉金額（不含手續費及交易稅）
+buy_cost (int):        付出成本
+sell_cost (int):       賣出收入
+pr_ratio (float):      損益比
+cond (StockOrderCond): {Cash: 現股, Netting: 餘額交割, MarginTrading: 融資, ShortSelling: 融券, Emerging: 興櫃}
+
+```
+
+ProfitLossTotal
+
+```
+entry_amount (float): 進倉總金額
+cover_amount (float): 平倉總金額
+quantity (int):       總數量
+buy_cost (float):     付出總成本
+sell_cost (float):    賣出總收入
+pnl (float):          總損益
+pr_ratio (float):     總損益比
+
+```
+
+In
+
+```
+api.list_profit_loss_summary(api.stock_account, '2026-05-01', '2026-05-21')
+
+```
+
+Out
+
+```
+ProfitLossSummaryTotal(
+    profitloss_summary=[
+        StockProfitLossSummary(
+            code='2890',
+            quantity=1000,
+            entry_price=30,
+            cover_price=31,
+            pnl=1000,
+            currency='NTD',
+            entry_cost=30000,
+            cover_cost=31000,
+            buy_cost=30119,
+            sell_cost=30881,
+            pr_ratio=3.33,
+            cond=<StockOrderCond.Cash: 'Cash'>,
+        ),
+        StockProfitLossSummary(
+            code='2330',
+            quantity=1000,
+            entry_price=2000,
+            cover_price=1980,
+            pnl=-20000,
+            currency='NTD',
+            entry_cost=2000000,
+            cover_cost=1980000,
+            buy_cost=2000119,
+            sell_cost=1979881,
+            pr_ratio=-1.00,
+            cond=<StockOrderCond.Cash: 'Cash'>,
+        ),
+    ],
+    total=ProfitLossTotal(
+        entry_amount=0,
+        cover_amount=0,
+        quantity=2000,
+        buy_cost=2030238,
+        sell_cost=2010762,
+        pnl=-19000,
+        pr_ratio=-0.94,
+    ),
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profitloss_sum \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "begin_date": "2026-05-01", "end_date": "2026-05-21", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+{
+  "profitloss_sum": [
+    {
+      "code": "2890",
+      "quantity": 1000,
+      "entry_price": 30.0,
+      "cover_price": 31.0,
+      "pnl": 1000.0,
+      "currency": "NTD",
+      "entry_cost": 30000,
+      "cover_cost": 31000,
+      "buy_cost": 30119,
+      "sell_cost": 30881,
+      "pr_ratio": 3.33,
+      "cond": "Cash"
+    },
+    {
+      "code": "2330",
+      "quantity": 1000,
+      "entry_price": 2000.0,
+      "cover_price": 1980.0,
+      "pnl": -20000.0,
+      "currency": "NTD",
+      "entry_cost": 2000000,
+      "cover_cost": 1980000,
+      "buy_cost": 2000119,
+      "sell_cost": 1979881,
+      "pr_ratio": -1.00,
+      "cond": "Cash"
+    }
+  ],
+  "total": {
+    "entry_amount": 0.0,
+    "cover_amount": 0.0,
+    "quantity": 2000,
+    "buy_cost": 2030238.0,
+    "sell_cost": 2010762.0,
+    "pnl": -19000.0,
+    "pr_ratio": -0.94
+  }
+}
+
+```
+
+### 期貨選擇權
+
+FutureProfitLossSummary
+
+```
+code (str):          商品代碼
+quantity (int):      數量
+entry_price (float): 進倉價格
+cover_price (float): 平倉價格
+pnl (float):         損益
+currency (str):      幣別
+direction (Action):  買賣別 {Buy: 買, Sell: 賣}
+tax (int):           交易稅
+fee (int):           交易手續費
+
+```
+
+ProfitLossTotal
+
+```
+entry_amount (float): 進倉總金額
+cover_amount (float): 平倉總金額
+quantity (int):       總數量
+buy_cost (float):     付出總成本
+sell_cost (float):    賣出總收入
+pnl (float):          總損益
+pr_ratio (float):     總損益比
+
+```
+
+In
+
+```
+api.list_profit_loss_summary(api.futopt_account, '2026-05-01', '2026-05-21')
+
+```
+
+Out
+
+```
+ProfitLossSummaryTotal(
+    profitloss_summary=[
+        FutureProfitLossSummary(
+            code='TXO20260620200C',
+            quantity=3,
+            entry_price=131.0,
+            cover_price=126.0,
+            pnl=-750.0,
+            currency='NTD',
+            direction=<Action.Buy: 'Buy'>,
+            tax=5,
+            fee=120,
+        ),
+    ],
+    total=ProfitLossTotal(
+        entry_amount=19650,
+        cover_amount=18900,
+        quantity=3,
+        buy_cost=19775,
+        sell_cost=18775,
+        pnl=-750,
+        pr_ratio=-3.79,
+    ),
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/profitloss_sum \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "F", "begin_date": "2026-05-01", "end_date": "2026-05-21", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+{
+  "profitloss_sum": [
+    {
+      "code": "TXO20260620200C",
+      "quantity": 3,
+      "entry_price": 131.0,
+      "cover_price": 126.0,
+      "pnl": -750.0,
+      "currency": "NTD",
+      "direction": "Buy",
+      "tax": 5,
+      "fee": 120
+    }
+  ],
+  "total": {
+    "entry_amount": 19650.0,
+    "cover_amount": 18900.0,
+    "quantity": 3,
+    "buy_cost": 19775.0,
+    "sell_cost": 18775.0,
+    "pnl": -750.0,
+    "pr_ratio": -3.79
+  }
+}
+
+```
+
+用於查詢**證券帳戶**交割款，需要先[登入](../../login)。
+
+settlements
+
+```
+api.settlements?
+
+Signature:
+    api.settlements(
+        account: shioaji.account.Account = None,
+        timeout: int = 5000,
+        cb: Callable[[List[shioaji.position.SettlementV1]], NoneType] = None,
+    ) -> List[shioaji.position.SettlementV1]
+
+```
+
+Parameters
+
+```
+account: 選填，證券帳戶（省略則使用 api.stock_account）
+timeout: 逾時毫秒
+cb:      選填，callback 函式，timeout=0 時使用
+
+```
+
+settlements
+
+```
+POST /api/v1/portfolio/settlements
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 帳戶類型，固定為 "S"
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+## 屬性
+
+SettlementV1
+
+```
+date (datetime.date): 交割日期
+amount (float):       交割金額
+T (int):              Tday
+
+```
+
+## 範例
+
+In
+
+```
+api.settlements()
+
+```
+
+Out
+
+```
+[
+    SettlementV1(date='2026-05-21', amount=100000, T=0),
+    SettlementV1(date='2026-05-22', amount=0, T=1),
+    SettlementV1(date='2026-05-25', amount=0, T=2),
+]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+settlements = api.settlements()
+df = pl.DataFrame(s.dict() for s in settlements)
+df
+
+```
+
+Out
+
+| date | amount | T | | --- | --- | --- | | 2026-05-21 | 100000 | 0 | | 2026-05-22 | 0 | 1 | | 2026-05-25 | 0 | 2 |
+
+**指定帳戶**
+
+In
+
+```
+api.settlements(account=api.stock_account)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/settlements \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+
+```
+
+Out
+
+```
+[
+  {"date": "2026-05-21", "amount": 100000.0, "T": 0},
+  {"date": "2026-05-22", "amount": 0.0, "T": 1},
+  {"date": "2026-05-25", "amount": 0.0, "T": 2}
+]
+
+```
+
+**指定帳戶**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/settlements \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+用於查詢**證券帳戶**交易額度，需要先[登入](../../login)。
+
+提醒
+
+查詢時間為交易日 8:30~15:00。
+
+TradingLimits
+
+```
+api.trading_limits?
+
+Signature:
+    api.trading_limits(
+        account: shioaji.account.Account = None,
+        timeout: int = 5000,
+        cb: Callable[[shioaji.position.TradingLimits], NoneType] = None,
+    ) -> shioaji.position.TradingLimits
+
+```
+
+Parameters
+
+```
+account: 選填，證券帳戶（省略則使用 api.stock_account）
+timeout: 逾時毫秒
+cb:      選填，callback 函式，timeout=0 時使用
+
+```
+
+TradingLimits
+
+```
+POST /api/v1/portfolio/trading_limits
+Content-Type: application/json
+
+{
+  "account_type": "S",
+  "broker_id": <string>,
+  "account_id": <string>,
+  "person_id": <string>
+}
+
+```
+
+Parameters
+
+```
+account_type: 帳戶類型，固定為 "S"
+broker_id:    選填，券商代碼
+account_id:   選填，帳戶代碼
+person_id:    選填，身分證字號
+
+```
+
+## 屬性
+
+TradingLimits
+
+```
+trading_limit (int):     電子交易總額度
+trading_used (int):      電子交易已用額度
+trading_available (int): 電子交易可用額度
+margin_limit (int):      融資額度上限
+margin_used (int):       融資已用額度
+margin_available (int):  融資可用額度
+short_limit (int):       融券額度上限
+short_used (int):        融券已用額度
+short_available (int):   融券可用額度
+
+```
+
+## 範例
+
+In
+
+```
+api.trading_limits(account=api.stock_account)
+
+```
+
+Out
+
+```
+TradingLimits(
+    trading_limit=1000000,
+    trading_used=0,
+    trading_available=1000000,
+    margin_limit=0,
+    margin_used=0,
+    margin_available=0,
+    short_limit=0,
+    short_used=0,
+    short_available=0
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/portfolio/trading_limits \
+  -H 'Content-Type: application/json' \
+  -d '{"account_type": "S", "broker_id": "YOUR_BROKER_ID", "account_id": "YOUR_ACCOUNT_ID"}'
+
+```
+
+Out
+
+```
+{"trading_limit":1000000,"trading_used":0,"trading_available":1000000,"margin_limit":0,"margin_used":0,"margin_available":0,"short_limit":0,"short_used":0,"short_available":0}
+
+```
+
+阻塞(Blocking)模式為函數必須等待某事完成。每個函數都是等待的，不管是在做 I/O 還是在做 CPU 任務。舉例來說，如果函數試圖從資料庫中獲取數據，那麼它需要停下來等待回傳結果，收到回傳結果後，才會繼續處理接下來的任務。相反地，非阻塞(non-blocking)模式，不會等待操作完成。如果您嘗試在短時間內發送批量操作，則非阻塞模式非常有用。我們提供以下範例讓您更了解之間的區別。
+
+切換阻塞/非阻塞模式為利用參數`timeout`。將API參數`timeout`設置為`0`為非阻塞模式。`timeout`預設值為 5000（毫秒），表示該函數最多等待 5 秒。
+
+### 非阻塞模式下單
+
+將`place_order` 函數中設置 `timeout = 0`。
+
+In
+
+```
+contract = api.Contracts.Futures.TXF['TXF202301']
+order = api.Order(
+    action=sj.constant.Action.Sell,
+    price=14000,
+    quantity=1,
+    price_type=sj.constant.FuturesPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD,
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+trade = api.place_order(contract, order, timeout=0)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Future(
+        code='TXFA3', 
+        symbol='TXF202301', 
+        name='臺股期貨01', 
+        category='TXF', 
+        delivery_month='202301', 
+        delivery_date='2023/01/30', 
+        underlying_kind='I', 
+        unit=1, 
+        limit_up=16241.0, 
+        limit_down=13289.0, 
+        reference=14765.0, 
+        update_date='2023/01/10'
+    ), 
+    order=Order(
+        action=<Action.Sell: 'Sell'>, 
+        price=14000, 
+        quantity=1, 
+        account=FutureAccount(
+            person_id='F123456789', 
+            broker_id='F002000', 
+            account_id='1234567', 
+            signed=True, 
+            username='PAPIUSER'
+        ), 
+        price_type=<StockPriceType.LMT: 'LMT'>, 
+        order_type=<OrderType.ROD: 'ROD'>
+    ), 
+    status=OrderStatus(status=<Status.Inactive: 'Inactive'>)
+)
+
+```
+
+在非阻塞模式中取得的`Trade`物件，因為委託單仍在傳輸中還未送至交易所，所以會缺少一些資訊。在`Order`物件中沒有`id`和`seqno`，`OrderStatus`物件中沒有 `id`、`status_code`、`order_datetime` 和 `deals`，`status`顯示為`Inactive`。在非阻塞模式中要取得上述提到的資訊可利用`委託回報`和`非阻塞模式下單回調`兩種方式。
+
+#### 委託回報
+
+Out
+
+```
+OrderState.FuturesOrder {
+    'operation': {
+        'op_type': 'New', 
+        'op_code': '00', 
+        'op_msg': ''
+    }, 
+    'order': {
+        'id': 'de616839', 
+        'seqno': '500009', 
+        'ordno': '000009', 
+        'action': 'Sell', 
+        'price': 14000, 
+        'quantity': 1, 
+        'order_type': 'ROD', 
+        'price_type': 'LMT', 
+        'oc_type': 'Auto', 
+        'custom_field': ''
+    }, 
+    'status': {
+        'id': 'de616839', 
+        'exchange_ts': 1673334371.492948, 
+        'order_quantity': 1, 
+        'modified_price': 0, 
+        'cancel_quantity': 0, 
+        'web_id': 'Z'
+    }, 
+    'contract': {
+        'security_type': 'FUT', 
+        'exchange': 'TAIFEX', 
+        'code': 'TXFA3'
+    }
+}
+
+```
+
+#### 非阻塞模式下單回調
+
+In
+
+```
+from shioaji.order import Trade
+
+def non_blocking_cb(trade:Trade):
+    print('__my_callback__')
+    print(trade)
+
+trade = api.place_order(
+    contract, 
+    order, 
+    timeout=0, 
+    cb=non_blocking_cb # only work in non-blocking mode
+)
+
+```
+
+Out: place order callback
+
+```
+__my_callback__
+contract=Future(
+    code='TXFA3', 
+    symbol='TXF202301', 
+    name='臺股期貨01', 
+    category='TXF', 
+    delivery_month='202301', 
+    delivery_date='2023/01/30', 
+    underlying_kind='I', 
+    unit=1, 
+    limit_up=16241.0, 
+    limit_down=13289.0, 
+    reference=14765.0, 
+    update_date='2023/01/10'
+), 
+order=Order(
+    action=<Action.Sell: 'Sell'>, 
+    price=14000, 
+    quantity=1, 
+    id='40fd85d6', 
+    seqno='958433', 
+    ordno='kY01g', 
+    account=FutureAccount(
+        person_id='F123456789', 
+        broker_id='F002000', 
+        account_id='1234567', 
+        signed=True, 
+        username='PAPIUSER'
+    ), 
+    price_type=<StockPriceType.LMT: 'LMT'>, 
+    order_type=<OrderType.ROD: 'ROD'>
+), 
+status=OrderStatus(
+    id='40fd85d6', 
+    status=<Status.Submitted: 'Submitted'>, 
+    status_code='    ', 
+    order_datetime=datetime.datetime(2023, 01, 10, 15, 14, 32), 
+    deals=[]
+)
+
+```
+
+### 比較兩者模式
+
+在非阻塞模式下，執行 `place_order` 大約需要 0.01 秒，這比阻塞模式下的執行時間快 12 倍。雖然非阻塞模式下單效率更高，需等待交易所收到委託後，委託單才會生效。
+
+contract and order
+
+```
+contract = api.Contracts.Futures.TXF['TXF202301']
+order = api.Order(
+    action='Sell',
+    price=14000,
+    quantity=1,
+    price_type='LMT',
+    order_type='ROD', 
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+
+```
+
+Blocking
+
+```
+start_time = time.time()
+api.place_order(contract, order) # block and wait for the order response
+print(time.time() - start_time)
+# 0.136578369140625 <- may be different
+
+```
+
+Non-Blocking
+
+```
+start_time = time.time()
+api.place_order(contract, order, timeout=0) # non-block, the order is in transmition (inactive).
+print(time.time() - start_time)
+# 0.011670351028442383 <- may be different
+
+```
+
+支援非等待模式的函數
+
+```
+- place_order
+- update_order
+- cancel_order
+- update_status
+- list_positions
+- list_position_detail
+- list_profit_loss
+- list_profit_loss_detail
+- list_profit_loss_summary
+- settlements
+- margin
+- ticks
+- kbars
+
+```
+
+Shioaji 提供綁訂報價模式，可以用來將報價儲存於訊息佇列，將報價推送至Redis Stream，或者實現觸價委託單。我們提供以下範例，讓您可以更了解綁訂報價模式如何運作。
+
+## 範例
+
+### 綁訂報價至訊息佇列
+
+In: pythonic way by using decorator
+
+```
+from collections import defaultdict, deque
+from shioaji import TickFOPv1, Exchange
+
+# set context
+msg_queue = defaultdict(deque)
+api.set_context(msg_queue)
+
+# In order to use context, set bind=True
+@api.on_tick_fop_v1(bind=True)
+def quote_callback(self, exchange:Exchange, tick:TickFOPv1):
+    # append quote to message queue
+    self[tick.code].append(tick)
+
+# subscribe
+api.quote.subscribe(
+    api.Contracts.Futures.TXF['TXF202107'],
+    quote_type = sj.constant.QuoteType.Tick, 
+    version = sj.constant.QuoteVersion.v1
+)
+
+```
+
+In: traditional way
+
+```
+def quote_callback(self, exchange:Exchange, tick:TickFOPv1):
+    # append tick to context
+    self[tick.code].append(tick)
+
+# In order to use context, set bind=True
+api.quote.set_on_tick_fop_v1_callback(quote_callback, bind=True)
+
+```
+
+Out
+
+```
+# after subscribe and wait for a few seconds ...
+# print(msg_queue)
+defaultdict(collections.deque, 
+    {
+        'TXFG1': [
+            Tick(code='TXFG1', datetime=datetime.datetime(2021, 7, 5, 10, 0, 21, 220000), open=Decimal('17755'), underlying_price=Decimal('17851.88'), bid_side_total_vol=34824, ask_side_total_vol=36212, avg_price=Decimal('17837.053112'), close=Decimal('17833'), high=Decimal('17900'), low=Decimal('17742'), amount=Decimal('17833'), total_amount=Decimal('981323314'), volume=1, total_volume=55016, tick_type=1, chg_type=2, price_chg=Decimal('184'), pct_chg=Decimal('1.042552'), simtrade=0),
+            Tick(code='TXFG1', datetime=datetime.datetime(2021, 7, 5, 10, 0, 21, 781000), open=Decimal('17755'), underlying_price=Decimal('17851.88'), bid_side_total_vol=34825, ask_side_total_vol=36213, avg_price=Decimal('17837.053056'), close=Decimal('17834'), high=Decimal('17900'), low=Decimal('17742'), amount=Decimal('17834'), total_amount=Decimal('981341148'), volume=1, total_volume=55017, tick_type=1, chg_type=2, price_chg=Decimal('185'), pct_chg=Decimal('1.048218'), simtrade=0)
+        ]
+    }
+)
+
+```
+
+### 將報價推送至Redis Stream
+
+在開始之前，請先安裝[redis](https://github.com/andymccurdy/redis-py)。
+
+In
+
+```
+import redis
+import json
+from shioaji import TickFOPv1, Exchange
+
+# redis setting
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# set up context
+api.set_context(r)
+
+# In order to use context, set bind=True
+@api.on_tick_fop_v1(bind=True)
+def quote_callback(self, exchange:Exchange, tick:TickFOPv1):
+    # push them to redis stream
+    channel = 'Q:' + tick.code # ='Q:TXFG1' in this example
+    self.xadd(channel, {'tick':json.dumps(tick.to_dict(raw=True))})
+
+```
+
+Out
+
+```
+# after subscribe and wait for a few seconds ...
+# r.xread({'Q:TXFG1':'0-0'})
+[
+    ['Q:TXFG1',
+        [
+            ('1625454940107-0',
+                {'tick': 
+                    '{"code": "TXFG1", "datetime": "2021-07-05T11:15:49.066000", "open": "17755", "underlying_price": "17904.03", "bid_side_total_vol": 49698, "ask_side_total_vol": 51490, "avg_price": "17851.312322", "close": "17889", "high": "17918", "low": "17742", "amount": "268335", "total_amount": "1399310819", "volume": 15, "total_volume": 78387, "tick_type": 2, "chg_type": 2, "price_chg": "240", "pct_chg": "1.35985", "simtrade": 0}'
+                }
+            ),
+            ('1625454941854-0',
+                {'tick': 
+                    '{"code": "TXFG1", "datetime": "2021-07-05T11:15:50.815000", "open": "17755", "underlying_price": "17902.58", "bid_side_total_vol": 49702, "ask_side_total_vol": 51478, "avg_price": "17851.313258", "close": "17888", "high": "17918", "low": "17742", "amount": "35776", "total_amount": "1399346595", "volume": 2, "total_volume": 78389, "tick_type": 2, "chg_type": 2, "price_chg": "239", "pct_chg": "1.354184", "simtrade": 0}'
+                }
+            )
+        ]
+    ]
+]
+
+
+# parse redis stream
+# [json.loads(x[-1]['tick']) for x in r.xread({'Q:TXFG1':'0-0'})[0][-1]]
+[
+    {
+        'code': 'TXFG1',
+        'datetime': '2021-07-05T11:15:49.066000',
+        'open': '17755',
+        'underlying_price': '17904.03',
+        'bid_side_total_vol': 49698,
+        'ask_side_total_vol': 51490,
+        'avg_price': '17851.312322',
+        'close': '17889',
+        'high': '17918',
+        'low': '17742',
+        'amount': '268335',
+        'total_amount': '1399310819',
+        'volume': 15,
+        'total_volume': 78387,
+        'tick_type': 2,
+        'chg_type': 2,
+        'price_chg': '240',
+        'pct_chg': '1.35985',
+        'simtrade': 0
+    },
+    {
+        'code': 'TXFG1',
+        'datetime': '2021-07-05T11:15:50.815000',
+        'open': '17755',
+        'underlying_price': '17902.58',
+        'bid_side_total_vol': 49702,
+        'ask_side_total_vol': 51478,
+        'avg_price': '17851.313258',
+        'close': '17888',
+        'high': '17918',
+        'low': '17742',
+        'amount': '35776',
+        'total_amount': '1399346595',
+        'volume': 2,
+        'total_volume': 78389,
+        'tick_type': 2,
+        'chg_type': 2,
+        'price_chg': '239',
+        'pct_chg': '1.354184',
+        'simtrade': 0
+    },
+]
+
+```
+
+### 觸價委託單
+
+[觸價委託單](https://www.investopedia.com/terms/s/stoporder.asp)，在市場價格觸及委託單上所設定之價位時，委託單立刻轉為限價單或市價單。
+
+**以下僅為範例，請小心使用並自行承擔風險**
+
+Example: stop order
+
+```
+import time
+from typing import Union
+
+import shioaji as sj
+
+class StopOrderExcecutor:
+    def __init__(self, api: sj.Shioaji) -> None:
+        self.api = api
+        self._stop_orders = {}
+
+    def on_quote(
+        self, quote: Union[sj.BidAskFOPv1, sj.BidAskSTKv1, sj.TickFOPv1, sj.TickSTKv1]
+    ) -> None:
+        code = quote.code
+        if code in self._stop_orders:
+            for stop_order in self._stop_orders[code]:
+                if stop_order['executed']:
+                    continue
+                if hasattr(quote, "ask_price"):
+                    price = 0.5 * float(
+                        quote.bid_price[0] + quote.ask_price[0]
+                    )  # mid price
+                else:
+                    price = float(quote.close)  # Tick
+
+                is_execute = False
+                if stop_order["stop_price"] >= stop_order["ref_price"]:
+                    if price >= stop_order["stop_price"]:
+                        is_execute = True
+
+                elif stop_order["stop_price"] < stop_order["ref_price"]:
+                    if price <= stop_order["stop_price"]:
+                        is_execute = True
+
+                if is_execute:
+                    self.api.place_order(stop_order["contract"], stop_order["pending_order"])
+                    stop_order['executed'] = True
+                    stop_order['ts_executed'] = time.time()
+                    print(f"execute stop order: {stop_order}")
+                else:
+                    self._stop_orders[code]
+
+    def add_stop_order(
+        self,
+        contract: sj.contracts.Contract,
+        stop_price: float,
+        order: sj.order.Order,
+    ) -> None:
+        code = contract.code
+        snap = self.api.snapshots([contract])[0]
+        # use mid price as current price to avoid illiquidity
+        ref_price = 0.5 * (snap.buy_price + snap.sell_price)
+        stop_order = {
+            "code": contract.code,
+            "stop_price": stop_price,
+            "ref_price": ref_price,
+            "contract": contract,
+            "pending_order": order,
+            "ts_create": time.time(),
+            "executed": False,
+            "ts_executed": 0.0
+        }
+
+        if code not in self._stop_orders:
+            self._stop_orders[code] = []
+        self._stop_orders[code].append(stop_order)
+        print(f"add stop order: {stop_order}")
+
+    def get_stop_orders(self) -> dict:
+        return self._stop_orders
+
+    def cancel_stop_order_by_code(self, code: str) -> None:
+        if code in self._stop_orders:
+            _ = self._stop_orders.pop(code)
+
+    def cancel_stop_order(self, stop_order: dict) -> None:
+        code = stop_order["code"]
+        if code in self._stop_orders:
+            self._stop_orders[code].remove(stop_order)
+            if len(self._stop_orders[code]) == 0:
+                self._stop_orders.pop(code)
+
+    def cancel_all_stop_orders(self) -> None:
+        self._stop_orders.clear()
+
+```
+
+- 使用snapshots的中價作為參考價格，以區分觸價委託單的方向。
+
+基本上，委託單會在您的電腦上待命，只有在商品價格觸擊所設定價格時，觸價委託單才會被送出，以下範例顯示如何提交限價觸價委託單(Stop-Limit Order)。
+
+Set up a stop order
+
+```
+# shioaji order
+contract = api.Contracts.Futures.TXF['TXF202301']
+order = api.Order(
+    action='Buy',
+    price=14800,
+    quantity=1,
+    price_type='LMT',
+    order_type='ROD', 
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+
+# Stop Order Excecutor
+soe = StopOrderExcecutor(api)
+soe.add_stop_order(contract=contract, stop_price=14805, order=order)
+
+```
+
+Out
+
+```
+add stop order: {
+    'code': 'TXFA3', 
+    'stop_price': 14805, 
+    'ref_price': 14790,
+    'contract': Future(
+        code='TXFA3', 
+        symbol='TXF202301', 
+        name='臺股期貨01', 
+        category='TXF', 
+        delivery_month='202301', 
+        delivery_date='2023/01/30', 
+        underlying_kind='I', 
+        unit=1, 
+        limit_up=16241.0, 
+        limit_down=13289.0, 
+        reference=14765.0, 
+        update_date='2023/01/10'
+    ), 
+    'pending_order': Order(
+        action=<Action.Buy: 'Buy'>, 
+        price=14800, 
+        quantity=1, 
+        account=FutureAccount(person_id='A123456789', broker_id='F002000', account_id='1234567', signed=True, username='PAIUSER'),
+        price_type=<StockPriceType.LMT: 'LMT'>, 
+        order_type=<OrderType.ROD: 'ROD'>
+    ), 
+    'ts_create': 1673329115.1056178, 
+    'executed': False, 
+    'ts_executed': 0.0
+}
+
+```
+
+- 市價觸價委託單(Stop-Market Order): `price_type = 'MKT'`
+
+最後，我們將`StopOrderExcecutor`綁訂在報價上。請注意，您必須訂略商品報價，觸價委託單才會執行。
+
+Set up context and callback function
+
+```
+from shioaji import TickFOPv1, Exchange
+
+# set up context
+api.set_context(soe)
+
+# In order to use context, set bind=True
+@api.on_tick_fop_v1(bind=True)
+def quote_callback(self, exchange:Exchange, tick:TickFOPv1):
+    # pass tick object to Stop Order Excecutor
+    self.on_quote(tick)
+
+# subscribe
+api.quote.subscribe(
+    contract,
+    quote_type = sj.constant.QuoteType.Tick, 
+    version = sj.constant.QuoteVersion.v1
+)
+
+```
+
+Out: Once close/mid price hit stop price
+
+```
+execute stop order: {
+    'code': 'TXFA3', 
+    'stop_price': 14805, 
+    'ref_price': 14790, 
+    'contract': Future(
+        code='TXFA3', 
+        symbol='TXF202301', 
+        name='臺股期貨01', 
+        category='TXF', 
+        delivery_month='202301', 
+        delivery_date='2023/01/30', 
+        underlying_kind='I', 
+        unit=1, 
+        limit_up=16241.0, 
+        limit_down=13289.0, 
+        reference=14765.0, 
+        update_date='2023/01/10'
+    ), 
+    'pending_order': Order(
+        action=<Action.Buy: 'Buy'>, 
+        price=14800, 
+        quantity=1, 
+        account=FutureAccount(person_id='A123456789', broker_id='F002000', account_id='1234567', signed=True, username='PAIUSER'),
+        price_type=<StockPriceType.LMT: 'LMT'>, 
+        order_type=<OrderType.ROD: 'ROD'>
+    ), 
+    'ts_create': 1673329115.1056178, 
+    'executed': True, 
+    'ts_executed': 1673329161.3224185
+}
+
+```
+
+本篇教學完整專案的程式碼可以參考 [sj-trading](https://github.com/Sinotrade/sj-trading-demo)， 完整使用範例 jupyter notebook 可以參考 [quote_manager_usage](https://github.com/Sinotrade/sj-trading-demo/blob/main/quote_manager_usage.ipynb)。
+
+本專案是使用 `uv` 建立的，如果還不熟悉如何使用 `uv` 建立專案並使用 `uv` 管理依賴，建議回到 [環境設定](../../env_setup.md) 章節從頭學習起。
+
+在開始進行行情管理器的編寫前，我們會使用 Polars 這個套件來處理行情資料，所以需要將它加入專案的依賴中，同時本篇教學中會有如何用 Polars 快速對多商品計算技術指標的範例，所以也需要將 polars_talib 這個套件加入專案的依這個。
+
+新增 Polars 依賴
+
+```
+uv add polars polars_talib
+
+```
+
+如果你對 Polars 不熟悉，可以參考 [Polars 官方文件](https://docs.pola.rs/user-guide/getting-started/) 來了解該如何使用他。
+
+polars_talib 是一個 Polars 的擴充套件，它提供了 polars expression 版本的 ta-lib 完整功能，讓我們可以很方便的用 Polars 進行技術指標的計算，他是由 shioaji 作者開發的，詳細使用可以參考 [polars_ta_extension](https://github.com/Yvictor/polars_ta_extension)。
+
+Polars 是一個高效的 DataFrame 套件，適合用來處理大量資料，並且不需要任何額外的設定，就可以使用多核心來加速資料處理。這篇範例中我們可以看到如何使用 Shioaji 的行情管理器來取得行情資料，並且使用 Polars 來做並行化運算，同時將商品的 ticks 進行分 K 轉換，並且做平行化的多商品技術指標計算。
+
+新增 quote.py
+
+在 `src/sj_trading/` 新增 `quote.py` 檔案，並且新增以下程式碼
+
+```
+import shioaji as sj
+from typing import List
+
+class QuoteManager:
+    def __init__(self, api: sj.Shioaji):
+        self.api = api
+        self.api.quote.set_on_tick_stk_v1_callback(self.on_stk_v1_tick_handler)
+        self.api.quote.set_on_tick_fop_v1_callback(self.on_fop_v1_tick_handler)
+        self.ticks_stk_v1: List[sj.TickSTKv1] = []
+        self.ticks_fop_v1: List[sj.TickFOPv1] = []
+
+    def on_stk_v1_tick_handler(self, _exchange: sj.Exchange, tick: sj.TickSTKv1):
+        self.ticks_stk_v1.append(tick)
+
+    def on_fop_v1_tick_handler(self, _exchange: sj.Exchange, tick: sj.TickFOPv1):
+        self.ticks_fop_v1.append(tick)
+
+```
+
+這個部分比較單純，讓收到行情的 handle func 盡可能地做最少的事，我們定義了一個 `QuoteManager` 類別，並且在初始化時設定了註冊兩個回調函數，分別是 `on_stk_v1_tick_handler` 和 `on_fop_v1_tick_handler`，這兩個函數會在接收到行情資料時被呼叫，並且將行情資料存入 `ticks_stk_v1` 和 `ticks_fop_v1` 中。
+
+增加 `QuoteManager` 訂閱與取消訂閱的方法
+
+```
+def __init__(self, api: sj.Shioaji):
+    # skip
+    self.subscribed_stk_tick: Set[str] = set()
+
+def subscribe_stk_tick(self, codes: List[str], recover: bool = False):
+    for code in codes:
+        contract = self.api.Contracts.Stocks[code]
+        if contract is not None and code not in self.subscribed_stk_tick:
+            self.api.quote.subscribe(contract, "tick")
+            self.subscribed_stk_tick.add(code)
+
+def unsubscribe_stk_tick(self, codes: List[str]):
+    for code in codes:
+        contract = self.api.Contracts.Stocks[code]
+        if contract is not None and code in self.subscribed_stk_tick:
+            self.api.quote.unsubscribe(contract, "tick")
+            self.subscribed_stk_tick.remove(code)
+
+def unsubscribe_all_stk_tick(self):
+    for code in self.subscribed_stk_tick:
+        contract = self.api.Contracts.Stocks[code]
+        if contract is not None:
+            self.api.quote.unsubscribe(contract, "tick")
+    self.subscribed_stk_tick.clear()
+
+```
+
+上面我們增加了 `subscribe_stk_tick` 方法，這個方法會將傳入的商品代碼列表中的商品代碼加入到 `subscribed_stk_tick` 中，並且呼叫 Shioaji 的 `subscribe` 方法來訂閱行情，`subscribed_stk_tick` 是一個 `Set`，用來存放已經訂閱的商品代碼，避免重複訂閱以及方便後續將所有訂閱商品取消訂閱。
+
+增加 `QuoteManager` 拿出訂閱的 ticks 的方法
+
+```
+def __init__(self, api: sj.Shioaji):
+    # skip
+    self.df_stk: pl.DataFrame = pl.DataFrame(
+        [],
+        schema=[
+            ("datetime", pl.Datetime),
+            ("code", pl.Utf8),
+            ("price", pl.Float64),
+            ("volume", pl.Int64),
+            ("tick_type", pl.Int8),
+        ],
+    )
+
+def get_df_stk(self) -> pl.DataFrame:
+    poped_ticks, self.ticks_stk_v1 = self.ticks_stk_v1, []
+    if poped_ticks:
+        df = pl.DataFrame([tick.to_dict() for tick in poped_ticks]).select(
+            pl.col("datetime", "code"),
+            pl.col("close").cast(pl.Float64).alias("price"),
+            pl.col("volume").cast(pl.Int64),
+            pl.col("tick_type").cast(pl.Int8),
+        )
+        self.df_stk = self.df_stk.vstack(df)
+    return self.df_stk
+
+```
+
+`__init__` 中我們定義了一個 `df_stk` 的 Polars DataFrame，用來存放所有訂閱的台股 tick 資料，`get_df_stk` 方法會將 `ticks_stk_v1` 中的資料轉換成 Polars DataFrame，並且回傳，到這邊我們就已經可以初步看到可以拿出來的 DataFrame 了。
+
+增加 `QuoteManager` 將 ticks 轉換成 K 線的方法
+
+```
+def get_df_stk_kbar(
+    self, unit: str = "1m", exprs: List[pl.Expr] = []
+) -> pl.DataFrame:
+    df = self.get_df_stk()
+    df = df.group_by(
+        pl.col("datetime").dt.truncate(unit),
+        pl.col("code"),
+        maintain_order=True,
+    ).agg(
+        pl.col("price").first().alias("open"),
+        pl.col("price").max().alias("high"),
+        pl.col("price").min().alias("low"),
+        pl.col("price").last().alias("close"),
+        pl.col("volume").sum().alias("volume"),
+    )
+    if exprs:
+        df = df.with_columns(exprs)
+    return df
+
+```
+
+在 `get_df_stk_kbar` 方法中，我們將 `get_df_stk` 拿到 Ticks 的 DataFrame 根據 code 和 truncate 後的 datetime 進行分組，並且對每個分組進行聚合開高低收量，最後回傳一個新的 DataFrame，這個 DataFrame 就是我們所需要的 K 線資料了，並且這邊保留了 `exprs` 參數，讓使用者可以傳入一些額外的運算式，來進行更多的運算。 在這邊 truncate 的單位我們使用 `1m` 來表示 1 分鐘，如果想要拿到 5 分鐘的 K 線，可以將單位改成 `5m`， 1 小時 K 可以將單位改成 `1h`，如果想要更多不同的單位可以參考 [truncate](https://docs.pola.rs/api/python/stable/reference/expressions/api/polars.Expr.dt.truncate.html) 的 API 文件。
+
+自定義技術指標計算
+
+```
+import polars as pl
+import polars_talib as plta
+
+quote_manager.get_df_stk_kbar("5m", [
+    pl.col("close").ta.ema(5).over("code").fill_nan(None).alias("ema5"),
+    plta.macd(pl.col("close"), 12, 26, 9).over("code").struct.field("macd").fill_nan(None),
+])
+
+```
+
+在這邊使用 polars_ta 的 expression 來計算技術指標，並且將計算出來的指標加入到 K 線資料中，這邊我們計算了 `ema` 和 `macd` 兩種指標，更多指標可以參考 [polars_ta_extension 支援指標列表](https://github.com/Yvictor/polars_ta_extension?tab=readme-ov-file#supported-indicators-and-functions)。
+
+在這個 polars_ta 的 expression 中，使用 `over("code")` 來將指標計算結果根據商品代碼進行分組做每個商品獨立的運算 ，所以即使所有的商品都在同一個 DataFrame 中，計算出來的結果還是每個商品獨立的，並且這個 `over` 的 partition 是會自動平行運算的，所以即使有大量的商品，也可以很快的計算出來，使用 `alias` 來將計算結果的欄位名稱設置為 `ema5`，在 `macd` 指標中回傳的是多個欄位的 struct ，這邊取出 struct 中的 macd 欄位。
+
+因為這邊傳入的只是表達式非常輕量，可以根據你需要的任何表達式進行新增就可以看到你需要的各種技術指標了，當然如果你要使用 polars expression 做出自己的指標，也是可以的，這邊只是提供一個可以做運算的接口以及簡單的使用範例。
+
+回補錯過的行情
+
+```
+def fetch_ticks(self, contract: BaseContract) -> pl.DataFrame:
+    code = contract.code
+    ticks = self.api.ticks(contract)
+    df = pl.DataFrame(ticks.dict()).select(
+        pl.from_epoch("ts", time_unit="ns").dt.cast_time_unit("us").alias("datetime"),
+        pl.lit(code).alias("code"),
+        pl.col("close").alias("price"),
+        pl.col("volume").cast(pl.Int64),
+        pl.col("tick_type").cast(pl.Int8),
+    )
+    return df
+
+def subscribe_stk_tick(self, codes: List[str], recover: bool = False):
+    for code in codes:
+        # skop
+        if recover:
+            df = self.fetch_ticks(contract)
+            if not df.is_empty():
+                code_ticks = [t for t in self.ticks_stk_v1 if t.code == code]
+                if code_ticks:
+                    t_first = code_ticks[0].datetime
+                    df = df.filter(pl.col("datetime") < t_first)
+                    self.df_stk = self.df_stk.vstack(df)
+                else:
+                    self.df_stk = self.df_stk.vstack(df)
+
+```
+
+在訂閱的時候我們可能會超過當天開盤的時間，這時候訂閱即時資料將會缺乏錯過的資料，所以這邊我們實作使用 api 回補歷史 tick 的資料，這邊我們使用 `fetch_ticks` 方法來取得歷史 tick 的資料，並且將取得資料加入到 `df_stk` 中。
+
+以上我們已經完成了一個可以訂閱行情、回補錯過行情、計算技術指標的行情管理器了，這邊我們將所有程式碼整合起來，並且在 jupyter lab 中使用。
+
+完整的 QuoteManager 可以參考 [quote.py](https://github.com/Sinotrade/sj-trading-demo/blob/main/src/sj_trading/quote.py)。
+
+完整使用範例 jupyter notebook 可以參考 [quote_manager_usage](https://github.com/Sinotrade/sj-trading-demo/blob/main/quote_manager_usage.ipynb)。
+
+## 觸價委託範例
+
+這是一個簡單的範例，說明如何實作價格監控以及觸價委託。
+
+```
+from pydantic import BaseModel
+
+class TouchOrderCond(BaseModel):
+    contract: Contract
+    order: Order
+    order: Order
+    touch_price: float
+
+class TouchOrder:
+   def __init__(self, api: sj.Shioaji, condition: TouchOrderCond
+    ):
+       self.flag = False
+       self.api = api
+       self.order = condition.order
+       self.contract = condition.contract
+       self.touch_price = condition.touch_price
+       self.api.quote.subscribe(self.contract)
+       self.api.quote.set_quote_callback(self.touch)
+
+   def touch(self, topic, quote):
+       price = quote["Close"][0]
+       if price == self.touch_price and not self.flag:
+           self.flag = True
+           self.api.place_order(self.contract, self.order)
+           self.api.quote.unsubscribe(self.contract)
+
+```
+
+完整程式碼詳見 [TouchPrice Order Extention](https://github.com/SsallyLin/touchprice)
+
+我們使用solace作為mesh broker。事件可視為你與solace的連接狀態。如果你沒有相關網路經驗，可以略過此部分。不用擔心在不用任何的設定下，我們將重連預設為50次。只需要請你確保你的網絡連接狀態正常。
+
+In
+
+```
+@api.quote.on_event
+def event_callback(resp_code: int, event_code: int, info: str, event: str):
+    print(f'Event code: {event_code} | Event: {event}')
+
+```
+
+Out
+
+```
+Event code: 16 | Event: Subscribe or Unsubscribe ok
+
+```
+
+如同報價callback，你可以利用兩種方式設定事件callback。
+
+In
+
+```
+api.quote.set_event_callback?
+
+```
+
+Out
+
+```
+Signature: 
+    api.quote.set_event_callback(func:Callable[[int, int, str, str], NoneType]) -> None
+Docstring:  <no docstring>
+Type:  method
+
+```
+
+### 事件代碼
+
+| Event Code | Event Code Enumerator | Description | | --- | --- | --- | | 0 | SOLCLIENT_SESSION_EVENT_UP_NOTICE | The Session is established. | | 1 | SOLCLIENT_SESSION_EVENT_DOWN_ERROR | The Session was established and then went down. | | 2 | SOLCLIENT_SESSION_EVENT_CONNECT_FAILED_ERROR | The Session attempted to connect but was unsuccessful. | | 3 | SOLCLIENT_SESSION_EVENT_REJECTED_MSG_ERROR | The appliance rejected a published message. | | 4 | SOLCLIENT_SESSION_EVENT_SUBSCRIPTION_ERROR | The appliance rejected a subscription (add or remove). | | 5 | SOLCLIENT_SESSION_EVENT_RX_MSG_TOO_BIG_ERROR | The API discarded a received message that exceeded the Session buffer size. | | 6 | SOLCLIENT_SESSION_EVENT_ACKNOWLEDGEMENT | The oldest transmitted Persistent/Non-Persistent message that has been acknowledged. | | 7 | SOLCLIENT_SESSION_EVENT_ASSURED_PUBLISHING_UP | Deprecated -- see notes in solClient_session_startAssuredPublishing.The AD Handshake (that is, Guaranteed Delivery handshake) has completed for the publisher and Guaranteed messages can be sent. | | 8 | SOLCLIENT_SESSION_EVENT_ASSURED_CONNECT_FAILED | Deprecated -- see notes in solClient_session_startAssuredPublishing.The appliance rejected the AD Handshake to start Guaranteed publishing. Use SOLCLIENT_SESSION_EVENT_ASSURED_DELIVERY_DOWN instead. | | 8 | SOLCLIENT_SESSION_EVENT_ASSURED_DELIVERY_DOWN | Guaranteed Delivery publishing is not available.The guaranteed delivery capability on the session has been disabled by some action on the appliance. | | 9 | SOLCLIENT_SESSION_EVENT_TE_UNSUBSCRIBE_ERROR | The Topic Endpoint unsubscribe command failed. | | 9 | SOLCLIENT_SESSION_EVENT_DTE_UNSUBSCRIBE_ERROR | Deprecated name; SOLCLIENT_SESSION_EVENT_TE_UNSUBSCRIBE_ERROR is preferred. | | 10 | SOLCLIENT_SESSION_EVENT_TE_UNSUBSCRIBE_OK | The Topic Endpoint unsubscribe completed. | | 10 | SOLCLIENT_SESSION_EVENT_DTE_UNSUBSCRIBE_OK | Deprecated name; SOLCLIENT_SESSION_EVENT_TE_UNSUBSCRIBE_OK is preferred. | | 11 | SOLCLIENT_SESSION_EVENT_CAN_SEND | The send is no longer blocked. | | 12 | SOLCLIENT_SESSION_EVENT_RECONNECTING_NOTICE | The Session has gone down, and an automatic reconnect attempt is in progress. | | 13 | SOLCLIENT_SESSION_EVENT_RECONNECTED_NOTICE | The automatic reconnect of the Session was successful, and the Session was established again. | | 14 | SOLCLIENT_SESSION_EVENT_PROVISION_ERROR | The endpoint create/delete command failed. | | 15 | SOLCLIENT_SESSION_EVENT_PROVISION_OK | The endpoint create/delete command completed. | | 16 | SOLCLIENT_SESSION_EVENT_SUBSCRIPTION_OK | The subscribe or unsubscribe operation has succeeded. | | 17 | SOLCLIENT_SESSION_EVENT_VIRTUAL_ROUTER_NAME_CHANGED | The appliance's Virtual Router Name changed during a reconnect operation.This could render existing queues or temporary topics invalid. | | 18 | SOLCLIENT_SESSION_EVENT_MODIFYPROP_OK | The session property modification completed. | | 19 | SOLCLIENT_SESSION_EVENT_MODIFYPROP_FAIL | The session property modification failed. | | 20 | SOLCLIENT_SESSION_EVENT_REPUBLISH_UNACKED_MESSAGES | After successfully reconnecting a disconnected session, the SDK received an unknown publisher flow name response when reconnecting the GD publisher flow. |
+
+每次您使用 `place_order`、`update_order` 或者 `cancel_order` 時，皆會收到來自交易所的委託或成交回報。我們亦提供了處理委託及成交回報的介面。如果您正在建立自己的交易系統，這會非常有幫助。
+
+注意
+
+預約單時段（盤前）下單不會收到回報。預約單會在每個交易日 08:30 放單，屆時才會觸發委託回報。
+
+## 處理委託及成交回報
+
+您可以使用 `set_order_callback` 來處理委託及成交回報。以下範例顯示，自製的委託回報函數(`order_cb`)將先 print `my_order_callback` 然後才 print 委託及成交回報。
+
+設定委託回報函式
+
+```
+# 方式一：decorator
+@api.on_order
+def order_cb(stat, msg):
+    print('my_order_callback')
+    print(stat, msg)
+
+# 方式二：傳統寫法
+def order_cb(stat, msg):
+    print('my_order_callback')
+    print(stat, msg)
+api.set_order_callback(order_cb)
+
+```
+
+下單
+
+```
+# 商品檔
+contract = api.Contracts.Stocks.TSE.TSE2890
+# 委託內容
+order = sj.StockOrder(
+    action=sj.Action.Buy,
+    price=27.1,
+    quantity=2,
+    price_type=sj.StockPriceType.LMT,
+    order_type=sj.OrderType.ROD,
+    order_lot=sj.StockOrderLot.Common,
+    order_cond=sj.StockOrderCond.Cash,
+    account=api.stock_account,
+)
+# 下單
+trade = api.place_order(contract, order)
+
+```
+
+#### 委託回報
+
+Out
+
+```
+my_order_callback
+<OrderState.StockOrder: 'SORDER'> {
+    'operation': {
+        'op_type': 'New',
+        'op_code': '00',
+        'op_msg': ''
+    },
+    'order': {
+        'id': '892f730b',
+        'seqno': '361840',
+        'ordno': 'Y23CL',
+        'account': {
+            'account_type': 'S',
+            'person_id': '',
+            'broker_id': 'YOUR_BROKER_ID',
+            'account_id': 'YOUR_ACCOUNT_ID',
+            'signed': True,
+            'username': ''
+        },
+        'action': 'Buy',
+        'price': 26.85,
+        'quantity': 1,
+        'order_type': 'ROD',
+        'price_type': 'LMT',
+        'order_cond': 'Cash',
+        'order_lot': 'Common',
+        'custom_field': ''
+    },
+    'status': {
+        'id': '892f730b',
+        'exchange_ts': 1779333919.92,
+        'modified_price': 0.0,
+        'cancel_quantity': 0,
+        'order_quantity': 1,
+        'web_id': '137'
+    },
+    'contract': {
+        'exchange': 'TSE',
+        'code': '2890',
+        'security_type': 'STK',
+        'symbol': '',
+        'name': '',
+        'currency': 'TWD'
+    }
+}
+
+```
+
+#### 成交回報
+
+Out
+
+```
+my_order_callback
+<OrderState.StockDeal: 'SDEAL'> {
+    'trade_id': '9c6ae2eb',
+    'seqno': '269866',
+    'ordno': 'IN497',
+    'exchange_seq': '669915',
+    'broker_id': 'YOUR_BROKER_ID',
+    'account_id': 'YOUR_ACCOUNT_ID',
+    'action': 'Buy',
+    'code': '2890',
+    'order_cond': 'Cash',
+    'order_lot': 'Common',
+    'price': 27.1,
+    'quantity': 2,
+    'web_id': '137',
+    'custom_field': '',
+    'ts': 1779333920.0
+}
+
+```
+
+接收委託成交回報
+
+```
+shioaji order events
+
+```
+
+此指令會持續輸出委託 / 成交回報，按 Ctrl+C 停止。
+
+下單（在另一個 terminal 執行）
+
+```
+shioaji order place \
+  --code 2890 \
+  --action buy \
+  --price 27.1 \
+  --quantity 2 \
+  --price-type lmt \
+  --order-type rod \
+  --order-lot common \
+  --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+**委託回報**
+
+Out
+
+```
+{
+  "state": "StockOrder",
+  "data": {
+    "StockOrder": {
+      "operation": {"op_type": "New", "op_code": "00", "op_msg": ""},
+      "order": {
+        "id": "892f730b",
+        "seqno": "361840",
+        "ordno": "Y23CL",
+        "account": {
+          "account_type": "S",
+          "person_id": "",
+          "broker_id": "YOUR_BROKER_ID",
+          "account_id": "YOUR_ACCOUNT_ID",
+          "signed": true,
+          "username": ""
+        },
+        "action": "Buy",
+        "price": 26.85,
+        "quantity": 1,
+        "order_type": "ROD",
+        "price_type": "LMT",
+        "order_cond": "Cash",
+        "order_lot": "Common",
+        "custom_field": ""
+      },
+      "status": {
+        "id": "892f730b",
+        "exchange_ts": 1779333919.92,
+        "modified_price": 0.0,
+        "cancel_quantity": 0,
+        "order_quantity": 1,
+        "web_id": "137"
+      },
+      "contract": {
+        "exchange": "TSE",
+        "code": "2890",
+        "security_type": "STK",
+        "symbol": "",
+        "name": "",
+        "currency": "TWD"
+      }
+    }
+  }
+}
+
+```
+
+**成交回報**
+
+Out
+
+```
+{
+  "state": "StockDeal",
+  "data": {
+    "StockDeal": {
+      "trade_id": "9c6ae2eb",
+      "seqno": "269866",
+      "ordno": "IN497",
+      "exchange_seq": "669915",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "action": "Buy",
+      "code": "2890",
+      "order_cond": "Cash",
+      "order_lot": "Common",
+      "price": 27.1,
+      "quantity": 2,
+      "web_id": "137",
+      "custom_field": "",
+      "ts": 1779333920.0
+    }
+  }
+}
+
+```
+
+接收委託成交回報
+
+```
+curl -N http://localhost:8080/api/v1/stream/data/order_event
+
+```
+
+此指令會持續輸出委託 / 成交回報，按 Ctrl+C 停止。
+
+下單（在另一個 terminal 執行）
+
+```
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "STK", "exchange": "TSE", "code": "2890"},
+    "stock_order": {
+      "action": "Buy",
+      "price": 27.1,
+      "quantity": 2,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "order_lot": "Common",
+      "order_cond": "Cash",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+**委託回報**
+
+Out
+
+```
+event:order_event
+data:{
+  "state": "StockOrder",
+  "data": {
+    "StockOrder": {
+      "operation": {"op_type": "New", "op_code": "00", "op_msg": ""},
+      "order": {
+        "id": "892f730b",
+        "seqno": "361840",
+        "ordno": "Y23CL",
+        "account": {
+          "account_type": "S",
+          "person_id": "",
+          "broker_id": "YOUR_BROKER_ID",
+          "account_id": "YOUR_ACCOUNT_ID",
+          "signed": true,
+          "username": ""
+        },
+        "action": "Buy",
+        "price": 26.85,
+        "quantity": 1,
+        "order_type": "ROD",
+        "price_type": "LMT",
+        "order_cond": "Cash",
+        "order_lot": "Common",
+        "custom_field": ""
+      },
+      "status": {
+        "id": "892f730b",
+        "exchange_ts": 1779333919.92,
+        "modified_price": 0.0,
+        "cancel_quantity": 0,
+        "order_quantity": 1,
+        "web_id": "137"
+      },
+      "contract": {
+        "exchange": "TSE",
+        "code": "2890",
+        "security_type": "STK",
+        "symbol": "",
+        "name": "",
+        "currency": "TWD"
+      }
+    }
+  }
+}
+
+```
+
+**成交回報**
+
+Out
+
+```
+event:order_event
+data:{
+  "state": "StockDeal",
+  "data": {
+    "StockDeal": {
+      "trade_id": "9c6ae2eb",
+      "seqno": "269866",
+      "ordno": "IN497",
+      "exchange_seq": "669915",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "action": "Buy",
+      "code": "2890",
+      "order_cond": "Cash",
+      "order_lot": "Common",
+      "price": 27.1,
+      "quantity": 2,
+      "web_id": "137",
+      "custom_field": "",
+      "ts": 1779333920.0
+    }
+  }
+}
+
+```
+
+CreditEnquires
+
+```
+api.credit_enquires?
+
+Signature:
+    api.credit_enquires(
+        contracts: List[shioaji.contracts.Stock],
+        timeout: int = 30000,
+        cb: Callable[[shioaji.data.CreditEnquire], NoneType] = None,
+    ) -> List[shioaji.data.CreditEnquire]
+
+```
+
+Parameters
+
+```
+contracts: 商品檔列表（由 api.Contracts.Stocks.* 取得）
+timeout:   逾時毫秒
+cb:        選填，callback 函式，timeout=0 時使用
+
+```
+
+CLI 目前不支援資券餘額查詢，請改用 Python / HTTP。
+
+CreditEnquires
+
+```
+POST /api/v1/data/credit_enquire
+Content-Type: application/json
+
+{
+  "contracts": [
+    { "security_type": "STK", "exchange": <Exchange>, "code": <string> }
+  ]
+}
+
+```
+
+Parameters
+
+```
+contracts:                 商品檔列表
+contracts[].security_type: 商品類型 {'STK'}
+contracts[].exchange:      交易所 {'TSE', 'OTC'}
+contracts[].code:          商品代碼（例如 2330）
+
+```
+
+提醒
+
+資券餘額僅支援證券 (`security_type` = `"STK"`)。
+
+## 屬性
+
+CreditEnquire
+
+```
+update_time (str):        更新時間
+system (str):             類別
+stock_id (str):           商品代碼
+margin_unit (int):        資餘額
+short_unit (int):         券餘額
+margin_loan_ratio (int):  融資成數
+short_margin_ratio (int): 融券成數
+
+```
+
+## 範例
+
+In
+
+```
+contracts = [api.Contracts.Stocks['2330'], api.Contracts.Stocks['2890']]
+credit_enquires = api.credit_enquires(contracts)
+credit_enquires
+
+```
+
+Out
+
+```
+[CreditEnquire(update_time='2026-05-18 10:46:56.019666', system='ALL', stock_id='2330', margin_unit=776, short_unit=0, margin_loan_ratio=60, short_margin_ratio=90),
+ CreditEnquire(update_time='2026-05-18 10:46:56.026375', system='ALL', stock_id='2890', margin_unit=0, short_unit=0, margin_loan_ratio=0, short_margin_ratio=0)]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+df = pl.DataFrame(c.dict() for c in credit_enquires)
+df
+
+```
+
+Out
+
+| update_time | system | stock_id | margin_unit | short_unit | margin_loan_ratio | short_margin_ratio | | --- | --- | --- | --- | --- | --- | --- | | 2026-05-18 10:46:56.019666 | ALL | 2330 | 776 | 0 | 60 | 90 | | 2026-05-18 10:46:56.026375 | ALL | 2890 | 0 | 0 | 0 | 0 |
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/credit_enquire \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contracts": [
+      {"security_type": "STK", "exchange": "TSE", "code": "2330"},
+      {"security_type": "STK", "exchange": "TSE", "code": "2890"}
+    ]
+  }'
+
+```
+
+Out
+
+```
+[{"update_time":"2026-05-18 10:52:33.781753","system":"ALL","stock_id":"2330","margin_unit":776,"short_unit":0,"margin_loan_ratio":60,"short_margin_ratio":90},{"update_time":"2026-05-18 10:52:33.788285","system":"ALL","stock_id":"2890","margin_unit":0,"short_unit":0,"margin_loan_ratio":0,"short_margin_ratio":0}]
+
+```
+
+用於查詢公告的**處置股**與**注意股**名單。
+
+## 處置股
+
+punish
+
+```
+api.punish?
+
+Signature:
+    api.punish(
+        timeout: int = 5000,
+        cb: Callable[[shioaji.data.Punish], NoneType] = None,
+    ) -> shioaji.data.Punish
+
+```
+
+Parameters
+
+```
+timeout: 逾時毫秒
+cb:      callback 函式，timeout=0 時使用
+
+```
+
+punish
+
+```
+GET /api/v1/data/regulatory_punish
+
+```
+
+### 屬性
+
+Punish
+
+```
+code (list[str]):            商品代碼
+start_date (list[date]):     處置開始日期
+end_date (list[date]):       處置結束日期
+updated_at (list[datetime]): 更新時間
+interval (list[str]):        撮合間隔
+unit_limit (list[float]):    單筆委託上限
+total_limit (list[float]):   單日委託上限
+description (list[str]):     處置內容
+announced_date (list[date]): 公告日期
+
+```
+
+### 範例
+
+In
+
+```
+api.punish()
+
+```
+
+Out
+
+```
+Punish[86](
+    code=["1591", "1595", ...],
+    start_date=["2026-05-21", "2026-05-11", ...],
+    end_date=["2026-06-03", "2026-05-22", ...],
+    updated_at=["2026-05-20T18:18:31", "2026-05-08T18:18:39", ...],
+    interval=["25分鐘", "5分鐘", ...],
+    unit_limit=[None, 10, ...],
+    total_limit=[None, 30, ...],
+    description=["...", "...", ...],
+    announced_date=["2026-05-20", "2026-05-08", ...]
+)
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+punish = api.punish()
+df = pl.DataFrame(punish.dict())
+df.head()
+
+```
+
+Out
+
+| code | start_date | end_date | updated_at | interval | unit_limit | total_limit | description | announced_date | | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 1591 | 2026-05-21 | 2026-06-03 | 2026-05-20T18:18:31 | 25分鐘 | null | null | ... | 2026-05-20 | | 1595 | 2026-05-11 | 2026-05-22 | 2026-05-08T18:18:39 | 5分鐘 | 10 | 30 | ... | 2026-05-08 |
+
+In
+
+```
+curl http://localhost:8080/api/v1/data/regulatory_punish
+
+```
+
+Out
+
+```
+{
+  "code": ["1591", "1595", "..."],
+  "start_date": ["2026-05-21", "2026-05-11", "..."],
+  "end_date": ["2026-06-03", "2026-05-22", "..."],
+  "updated_at": ["2026-05-20T18:18:31", "2026-05-08T18:18:39", "..."],
+  "interval": ["25分鐘", "5分鐘", "..."],
+  "unit_limit": [null, 10, "..."],
+  "total_limit": [null, 30, "..."],
+  "description": ["...", "...", "..."],
+  "announced_date": ["2026-05-20", "2026-05-08", "..."]
+}
+
+```
+
+______________________________________________________________________
+
+## 注意股
+
+notice
+
+```
+api.notice?
+
+Signature:
+    api.notice(
+        timeout: int = 5000,
+        cb: Callable[[shioaji.data.Notice], NoneType] = None,
+    ) -> shioaji.data.Notice
+
+```
+
+Parameters
+
+```
+timeout: 逾時毫秒
+cb:      callback 函式，timeout=0 時使用
+
+```
+
+notice
+
+```
+GET /api/v1/data/regulatory_notice
+
+```
+
+### 屬性
+
+Notice
+
+```
+code (list[str]):            商品代碼
+updated_at (list[datetime]): 更新時間
+close (list[float]):         收盤價
+reason (list[str]):          注意交易資訊
+announced_date (list[date]): 公告日期
+
+```
+
+### 範例
+
+In
+
+```
+api.notice()
+
+```
+
+Out
+
+```
+Notice[2](
+    code=["6775", "6990"],
+    updated_at=["2026-05-21T17:18:15", "2026-05-21T17:18:15"],
+    close=[51.16, 153.29],
+    reason=["...", "..."],
+    announced_date=["2026-05-21", "2026-05-21"]
+)
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+notice = api.notice()
+df = pl.DataFrame(notice.dict())
+df.head()
+
+```
+
+Out
+
+| code | updated_at | close | reason | announced_date | | --- | --- | --- | --- | --- | | 6775 | 2026-05-21T17:18:15 | 51.16 | ... | 2026-05-21 | | 6990 | 2026-05-21T17:18:15 | 153.29 | ... | 2026-05-21 |
+
+In
+
+```
+curl http://localhost:8080/api/v1/data/regulatory_notice
+
+```
+
+Out
+
+```
+{
+  "code": ["6775", "6990"],
+  "updated_at": ["2026-05-21T17:18:15", "2026-05-21T17:18:15"],
+  "close": [51.16, 153.29],
+  "reason": ["...", "..."],
+  "announced_date": ["2026-05-21", "2026-05-21"]
+}
+
+```
+
+歷史資料提供查詢逐筆成交（`Ticks`）與分 K 線（`Kbars`）。
+
+注意
+
+歷史資料查詢會佔用流量，請參考[使用限制](../../limit/)了解每日流量上限。
+
+## Ticks
+
+取得方式可以以一整天、某時間區段或是某天的最後幾筆。預設為商品最近交易日的 `Ticks`。
+
+Ticks
+
+```
+api.ticks?
+
+Signature:
+    api.ticks(
+        contract: shioaji.contracts.BaseContract,
+        date: str = '2026-05-18',
+        query_type: shioaji.constant.TicksQueryType = <TicksQueryType.AllDay: 'AllDay'>,
+        time_start: Union[str, datetime.time] = None,
+        time_end: Union[str, datetime.time] = None,
+        last_cnt: int = 0,
+        timeout: int = 5000,
+        cb: Callable[[shioaji.data.Ticks], NoneType] = None,
+    ) -> shioaji.data.Ticks
+Docstring:
+    get contract tick volume
+
+```
+
+Parameters
+
+```
+contract:    商品檔（由 api.Contracts.* 取得）
+date:        交易日（YYYY-MM-DD）
+query_type:  查詢類型 {'AllDay', 'RangeTime', 'LastCount'}
+time_start:  選填，起始時間，query_type='RangeTime' 時使用
+time_end:    選填，結束時間，query_type='RangeTime' 時使用
+last_cnt:    選填，取末 N 筆，query_type='LastCount' 時使用
+timeout:     逾時毫秒
+cb:          選填，callback 函式，timeout=0 時使用
+
+```
+
+Ticks
+
+```
+$ shioaji data ticks --help
+
+Get tick data for a contract
+
+Usage: shioaji data ticks [OPTIONS] --code <CODE>
+
+Options:
+      --code <CODE>                    Security code (e.g. 2330, TXFR1)
+      --date <DATE>                    Trading date (YYYY-MM-DD, default: today) [default: 2026-05-18]
+      --last <LAST>                    Number of last ticks to return (default: 10) [default: 10]
+      --all                            Fetch all ticks for the day (overrides --last)
+      --security-type <SECURITY_TYPE>  Security type: STK, FUT, OPT, IND [default: STK]
+      --exchange <EXCHANGE>            Exchange: TSE, OTC, TAIFEX [default: TSE]
+
+```
+
+Parameters
+
+```
+--code:          商品代碼（例如 2330、TXFR1）
+--date:          交易日（YYYY-MM-DD）
+--last:          選填，取末 N 筆
+--all:           選填，取整日所有 ticks（覆蓋 --last）
+--security-type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+--exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+
+```
+
+Ticks
+
+```
+POST /api/v1/data/ticks
+Content-Type: application/json
+
+{
+  "contract":   { "security_type": <SecurityType>, "exchange": <Exchange>, "code": <string> },
+  "date":       <string>,
+  "query_type": <TicksQueryType>,
+  "time_start": <string?>,
+  "time_end":   <string?>,
+  "last_cnt":   <int>
+}
+
+```
+
+Parameters
+
+```
+contract.security_type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+contract.exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+contract.code:          商品代碼（例如 2330、TXFR1）
+date:                   交易日（YYYY-MM-DD）
+query_type:             查詢類型 {'AllDay', 'RangeTime', 'LastCount'}
+time_start:             選填，起始時間，query_type='RangeTime' 時使用
+time_end:               選填，結束時間，query_type='RangeTime' 時使用
+last_cnt:               選填，取末 N 筆，query_type='LastCount' 時使用
+
+```
+
+### 屬性
+
+Ticks
+
+```
+ts / datetime:     時間（Python 為 Unix 時間戳，其他語言為 ISO 字串）
+close (float):     成交價
+volume (int):      成交量
+bid_price (float): 委買價
+bid_volume (int):  委買量
+ask_price (float): 委賣價
+ask_volume (int):  委賣量
+tick_type (int):   內外盤別{1: 外盤, 2: 內盤, 0: 無法判定}
+
+```
+
+### 範例
+
+#### 取得特定日期 Ticks
+
+In
+
+```
+ticks = api.ticks(
+    contract=api.Contracts.Stocks["2330"],
+    date="2026-05-18"
+)
+ticks
+
+```
+
+Out
+
+```
+Ticks[7171](
+    ts=[1779094808306075000, 1779094808342157000, 1779094808368510000, ...],
+    close=[2225, 2225, 2225, ...],
+    volume=[2166, 47, 50, ...],
+    bid_price=[2220, 2220, 2220, ...],
+    bid_volume=[692, 693, 696, ...],
+    ask_price=[2225, 2225, 2230, ...],
+    ask_volume=[97, 50, 104, ...],
+    tick_type=[2, 1, 1, ...]
+)
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+df = pl.DataFrame(ticks.dict()).with_columns(
+    pl.col("ts").cast(pl.Datetime("ns"))
+)
+df.head()
+
+```
+
+Out
+
+| ts | close | volume | bid_price | bid_volume | ask_price | ask_volume | tick_type | | --- | --- | --- | --- | --- | --- | --- | --- | | 2026-05-18 09:00:08.306075 | 2225.0 | 2166 | 2220.0 | 692 | 2225.0 | 97 | 2 | | 2026-05-18 09:00:08.342157 | 2225.0 | 47 | 2220.0 | 693 | 2225.0 | 50 | 1 | | 2026-05-18 09:00:08.368510 | 2225.0 | 50 | 2220.0 | 696 | 2230.0 | 104 | 1 | | ... | ... | ... | ... | ... | ... | ... | ... |
+
+#### 取得特定時間區段 Ticks
+
+In
+
+```
+ticks = api.ticks(
+    contract=api.Contracts.Stocks["2330"],
+    date="2026-05-18",
+    query_type=sj.constant.TicksQueryType.RangeTime,
+    time_start="09:00:00",
+    time_end="09:20:01"
+)
+ticks
+
+```
+
+Out
+
+```
+Ticks[1151](
+    ts=[1779094808306075000, 1779094808342157000, 1779094808368510000, ...],
+    close=[2225, 2225, 2225, ...],
+    volume=[2166, 47, 50, ...],
+    bid_price=[2220, 2220, 2220, ...],
+    bid_volume=[692, 693, 696, ...],
+    ask_price=[2225, 2225, 2230, ...],
+    ask_volume=[97, 50, 104, ...],
+    tick_type=[2, 1, 1, ...]
+)
+
+```
+
+#### 取得最後數筆 Ticks
+
+In
+
+```
+ticks = api.ticks(
+    contract=api.Contracts.Stocks["2330"],
+    date="2026-05-18",
+    query_type=sj.constant.TicksQueryType.LastCount,
+    last_cnt=4,
+)
+ticks
+
+```
+
+Out
+
+```
+Ticks[4](
+    ts=[1779110696011886000, 1779110697008306000, 1779111000000000000, 1779114600000000000],
+    close=[2245.0, 2240.0, 2240.0, 2240.0],
+    volume=[2, 6, 4606, 75],
+    bid_price=[2240.0, 2240.0, 2240.0, 2240.0],
+    bid_volume=[454, 447, 524, 524],
+    ask_price=[2250.0, 2250.0, 2245.0, 2245.0],
+    ask_volume=[179, 41, 103, 103],
+    tick_type=[2, 2, 2, 2]
+)
+
+```
+
+**取得特定日期 Ticks**
+
+In
+
+```
+shioaji data ticks --code 2330 --date 2026-05-18 --all
+
+```
+
+Out
+
+```
+[7171]{datetime,close,volume,bid_price,bid_volume,ask_price,ask_volume,tick_type}:
+  2026-05-18T09:00:08.306075,2225,2166,2220,692,2225,97,2
+  2026-05-18T09:00:08.342157,2225,47,2220,693,2225,50,1
+  2026-05-18T09:00:08.368510,2225,50,2220,696,2230,104,1
+  ...
+
+```
+
+**取得最後數筆 Ticks**
+
+In
+
+```
+shioaji data ticks --code 2330 --date 2026-05-18 --last 4
+
+```
+
+Out
+
+```
+[4]{datetime,close,volume,bid_price,bid_volume,ask_price,ask_volume,tick_type}:
+  2026-05-18T13:24:56.011886,2245,2,2240,454,2250,179,2
+  2026-05-18T13:24:57.008306,2240,6,2240,447,2250,41,2
+  2026-05-18T13:30:00,2240,4606,2240,524,2245,103,2
+  2026-05-18T14:30:00,2240,75,2240,524,2245,103,2
+
+```
+
+**取得特定日期 Ticks**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/ticks \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": { "security_type": "STK", "exchange": "TSE", "code": "2330" },
+    "date": "2026-05-18",
+    "query_type": "AllDay"
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T09:00:08.306075","2026-05-18T09:00:08.342157","2026-05-18T09:00:08.368510",...],"close":[2225.0,2225.0,2225.0,...],"volume":[2166,47,50,...],"bid_price":[2220.0,2220.0,2220.0,...],"bid_volume":[692,693,696,...],"ask_price":[2225.0,2225.0,2230.0,...],"ask_volume":[97,50,104,...],"tick_type":[2,1,1,...]}
+
+```
+
+**取得特定時間區段 Ticks**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/ticks \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": { "security_type": "STK", "exchange": "TSE", "code": "2330" },
+    "date": "2026-05-18",
+    "query_type": "RangeTime",
+    "time_start": "09:00:00",
+    "time_end": "09:20:01"
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T09:00:08.306075","2026-05-18T09:00:08.342157","2026-05-18T09:00:08.368510",...],"close":[2225.0,2225.0,2225.0,...],"volume":[2166,47,50,...],"bid_price":[2220.0,2220.0,2220.0,...],"bid_volume":[692,693,696,...],"ask_price":[2225.0,2225.0,2230.0,...],"ask_volume":[97,50,104,...],"tick_type":[2,1,1,...]}
+
+```
+
+**取得最後數筆 Ticks**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/ticks \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": { "security_type": "STK", "exchange": "TSE", "code": "2330" },
+    "date": "2026-05-18",
+    "query_type": "LastCount",
+    "last_cnt": 4
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T13:24:56.011886","2026-05-18T13:24:57.008306","2026-05-18T13:30:00","2026-05-18T14:30:00"],"close":[2245.0,2240.0,2240.0,2240.0],"volume":[2,6,4606,75],"bid_price":[2240.0,2240.0,2240.0,2240.0],"bid_volume":[454,447,524,524],"ask_price":[2250.0,2250.0,2245.0,2245.0],"ask_volume":[179,41,103,103],"tick_type":[2,2,2,2]}
+
+```
+
+## Kbars
+
+取得 `Kbars` 可以指定起訖日期區間，預設為商品最近交易日的 `Kbars`。
+
+Kbars
+
+```
+api.kbars?
+
+Signature:
+    api.kbars(
+        contract: shioaji.contracts.BaseContract,
+        start: str = '2026-05-17',
+        end: str = '2026-05-18',
+        timeout: int = 5000,
+        cb: Callable[[shioaji.data.Kbars], NoneType] = None,
+    ) -> shioaji.data.Kbars
+Docstring:
+    get Kbar
+
+```
+
+Parameters
+
+```
+contract: 商品檔（由 api.Contracts.* 取得）
+start:    起始日期（YYYY-MM-DD），預設為昨天
+end:      結束日期（YYYY-MM-DD），預設為今天
+timeout:  逾時毫秒
+cb:       選填，callback 函式，timeout=0 時使用
+
+```
+
+Kbars
+
+```
+$ shioaji data kbars --help
+
+Get K-bar (OHLCV) data for a contract
+
+Usage: shioaji data kbars [OPTIONS] --code <CODE>
+
+Options:
+      --code <CODE>                    Security code (e.g. 2330, TXFR1)
+      --start <START>                  Start date (YYYY-MM-DD, default: today) [default: 2026-05-18]
+      --end <END>                      End date (YYYY-MM-DD, default: today) [default: 2026-05-18]
+      --security-type <SECURITY_TYPE>  Security type: STK, FUT, OPT, IND [default: STK]
+      --exchange <EXCHANGE>            Exchange: TSE, OTC, TAIFEX [default: TSE]
+
+```
+
+Parameters
+
+```
+--code:          商品代碼（例如 2330、TXFR1）
+--start:         起始日期（YYYY-MM-DD）
+--end:           結束日期（YYYY-MM-DD）
+--security-type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+--exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+
+```
+
+Kbars
+
+```
+POST /api/v1/data/kbars
+Content-Type: application/json
+
+{
+  "contract": { "security_type": <SecurityType>, "exchange": <Exchange>, "code": <string> },
+  "start":    <string>,
+  "end":      <string>
+}
+
+```
+
+Parameters
+
+```
+contract.security_type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+contract.exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+contract.code:          商品代碼（例如 2330、TXFR1）
+start:                  起始日期（YYYY-MM-DD）
+end:                    結束日期（YYYY-MM-DD）
+
+```
+
+### 屬性
+
+Kbars
+
+```
+ts / datetime:  時間（Python 為 Unix 時間戳，其他語言為 ISO 字串）
+Open (float):   開盤價
+High (float):   最高價
+Low (float):    最低價
+Close (float):  收盤價
+Volume (int):   成交量
+Amount (float): 成交額
+
+```
+
+### 範例
+
+In
+
+```
+kbars = api.kbars(
+    contract=api.Contracts.Stocks["2330"],
+    start="2026-05-17",
+    end="2026-05-18"
+)
+kbars
+
+```
+
+Out
+
+```
+KBars[270](
+    ts=[1779094860000000000, 1779094920000000000, 1779094980000000000, ...],
+    Open=[2225, 2235, 2225, ...],
+    High=[2235, 2235, 2230, ...],
+    Low=[2225, 2225, 2220, ...],
+    Close=[2230, 2230, 2225, ...],
+    Volume=[2565, 377, 296, ...],
+    Amount=[5708965000, 840260000, 659090000, ...]
+)
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+df = pl.DataFrame(kbars.dict()).with_columns(
+    pl.col("ts").cast(pl.Datetime("ns"))
+)
+df.head()
+
+```
+
+Out
+
+| ts | Open | High | Low | Close | Volume | Amount | | --- | --- | --- | --- | --- | --- | --- | | 2026-05-18 09:01:00 | 2225.0 | 2235.0 | 2225.0 | 2230.0 | 2565 | 5.7090e9 | | 2026-05-18 09:02:00 | 2235.0 | 2235.0 | 2225.0 | 2230.0 | 377 | 8.4026e8 | | 2026-05-18 09:03:00 | 2225.0 | 2230.0 | 2220.0 | 2225.0 | 296 | 6.5909e8 | | ... | ... | ... | ... | ... | ... | ... |
+
+In
+
+```
+shioaji data kbars --code 2330 --start 2026-05-17 --end 2026-05-18
+
+```
+
+Out
+
+```
+[270]{datetime,Open,High,Low,Close,Volume,Amount}:
+  2026-05-18T09:01:00,2225,2235,2225,2230,2565,5708965000
+  2026-05-18T09:02:00,2235,2235,2225,2230,377,840260000
+  2026-05-18T09:03:00,2225,2230,2220,2225,296,659090000
+  ...
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/kbars \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": { "security_type": "STK", "exchange": "TSE", "code": "2330" },
+    "start": "2026-05-17",
+    "end": "2026-05-18"
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T09:01:00","2026-05-18T09:02:00","2026-05-18T09:03:00",...],"Open":[2225.0,2235.0,2225.0,...],"High":[2235.0,2235.0,2230.0,...],"Low":[2225.0,2225.0,2220.0,...],"Close":[2230.0,2230.0,2225.0,...],"Volume":[2565,377,296,...],"Amount":[5708965000.0,840260000.0,659090000.0,...]}
+
+```
+
+## 資料歷史期間
+
+Historical Periods
+
+| | Start Date | End Date | | --- | --- | --- | | Index | 2020-03-02 | Today | | Stock | 2020-03-02 | Today | | Futures | 2020-03-22 | Today |
+
+## 連續期貨合約
+
+期貨合約一旦到期，合約即不再有效，亦即他將不會出現在您的`api.Contracts`裡。為了取得到期的期貨合約歷史資料，我們提供連續期貨合約。`R1`, `R2`是近月及次月的連續期貨合約，他們會自動在結算日更換新的合約（即 `target_code` 會變）。您可以使用`R1`, `R2`合約來取得長期的歷史資料，例如`api.Contracts.Futures.TXF.TXFR1`。以下顯示如何使用`R1`, `R2`合約取得到期期貨的歷史`Ticks`及`Kbars`。
+
+注意
+
+`code` 必須出現在 `api.Contracts` 裡才能放入 `api.ticks` / `api.kbars` 查詢。例如 `TXFE6` 是 2026 年 5 月的合約，到了 2026 年 6 月就不再出現在 `api.Contracts`，此時就無法用 `TXFE6` 查詢。
+
+#### Ticks
+
+In
+
+```
+ticks = api.ticks(
+    contract=api.Contracts.Futures.TXF.TXFR1,
+    date="2026-05-18",
+    query_type=sj.constant.TicksQueryType.LastCount,
+    last_cnt=4,
+)
+ticks
+
+```
+
+Out
+
+```
+Ticks[4](
+    ts=[1779111899290000000, 1779111899345000000, 1779111899345000000, 1779111899967000000],
+    close=[40803.0, 40799.0, 40798.0, 40807.0],
+    volume=[1, 2, 7, 1],
+    bid_price=[40803.0, 40799.0, 40799.0, 40800.0],
+    bid_volume=[2, 2, 2, 1],
+    ask_price=[40808.0, 40807.0, 40807.0, 40807.0],
+    ask_volume=[1, 1, 1, 1],
+    tick_type=[2, 2, 2, 1]
+)
+
+```
+
+#### Kbars
+
+In
+
+```
+kbars = api.kbars(
+    contract=api.Contracts.Futures.TXF.TXFR1,
+    start="2026-05-17",
+    end="2026-05-18"
+)
+kbars
+
+```
+
+Out
+
+```
+KBars[438](
+    ts=[1779093960000000000, 1779094020000000000, 1779094080000000000, ...],
+    Open=[40200, 40308, 40276, ...],
+    High=[40369, 40342, 40316, ...],
+    Low=[40169, 40262, 40251, ...],
+    Close=[40310, 40276, 40316, ...],
+    Volume=[2051, 704, 443, ...],
+    Amount=[82536213, 28372910, 17845729, ...]
+)
+
+```
+
+**Ticks**
+
+In
+
+```
+shioaji data ticks --code TXFR1 --date 2026-05-18 --security-type FUT --exchange TAIFEX --last 4
+
+```
+
+Out
+
+```
+[4]{datetime,close,volume,bid_price,bid_volume,ask_price,ask_volume,tick_type}:
+  2026-05-18T13:44:59.290000,40803,1,40803,2,40808,1,2
+  2026-05-18T13:44:59.345000,40799,2,40799,2,40807,1,2
+  2026-05-18T13:44:59.345000,40798,7,40799,2,40807,1,2
+  2026-05-18T13:44:59.967000,40807,1,40800,1,40807,1,1
+
+```
+
+**Kbars**
+
+In
+
+```
+shioaji data kbars --code TXFR1 --start 2026-05-17 --end 2026-05-18 --security-type FUT --exchange TAIFEX
+
+```
+
+Out
+
+```
+[438]{datetime,Open,High,Low,Close,Volume,Amount}:
+  2026-05-18T08:46:00,40200,40369,40169,40310,2051,82536213
+  2026-05-18T08:47:00,40308,40342,40262,40276,704,28372910
+  2026-05-18T08:48:00,40276,40316,40251,40316,443,17845729
+  ...
+
+```
+
+**Ticks**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/ticks \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "FUT", "exchange": "TAIFEX", "code": "TXFR1"},
+    "date": "2026-05-18",
+    "query_type": "LastCount",
+    "last_cnt": 4
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T13:44:59.290000","2026-05-18T13:44:59.345000","2026-05-18T13:44:59.345000","2026-05-18T13:44:59.967000"],"close":[40803.0,40799.0,40798.0,40807.0],"volume":[1,2,7,1],"bid_price":[40803.0,40799.0,40799.0,40800.0],"bid_volume":[2,2,2,1],"ask_price":[40808.0,40807.0,40807.0,40807.0],"ask_volume":[1,1,1,1],"tick_type":[2,2,2,1]}
+
+```
+
+**Kbars**
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/kbars \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "FUT", "exchange": "TAIFEX", "code": "TXFR1"},
+    "start": "2026-05-17",
+    "end": "2026-05-18"
+  }'
+
+```
+
+Out
+
+```
+{"datetime":["2026-05-18T08:46:00","2026-05-18T08:47:00","2026-05-18T08:48:00",...],"Open":[40200.0,40308.0,40276.0,...],"High":[40369.0,40342.0,40316.0,...],"Low":[40169.0,40262.0,40251.0,...],"Close":[40310.0,40276.0,40316.0,...],"Volume":[2051,704,443,...],"Amount":[82536213.0,28372910.0,17845729.0,...]}
+
+```
+
+包含漲跌幅、漲跌、高低價差、成交量及成交金額排行。`Scanners`利用`scanner_type`去取得不同類型的排行。
+
+Scanners
+
+```
+api.scanners?
+
+Signature:
+    api.scanners(
+        scanner_type: shioaji.constant.ScannerType,
+        date: str = None,
+        ascending: bool = True,
+        count: int = 100,
+        timeout: int = 30000,
+        cb: Callable[[List[shioaji.data.ScannerItem]], NoneType] = None,
+    ) -> List[shioaji.data.ScannerItem]
+
+```
+
+Parameters
+
+```
+scanner_type: 排行類型，見下方支援列表
+date:         交易日（YYYY-MM-DD），預設今天
+ascending:    排序方向（True=由大到小、False=由小到大），預設 True
+count:        排行數量（0 ≤ count ≤ 200），預設 100
+timeout:      逾時毫秒
+cb:           選填，callback 函式，timeout=0 時使用
+
+```
+
+Scanners
+
+```
+$ shioaji data scanner --help
+
+Get scanner ranking data
+
+Usage: shioaji data scanner [OPTIONS]
+
+Options:
+      --scanner-type <SCANNER_TYPE>  Scanner type [change-percent-rank, change-price-rank, day-range-rank, volume-rank, amount-rank, tick-count-rank] [default: change-percent-rank]
+      --date <DATE>                  Trading date (YYYY-MM-DD, default: today) [default: 2026-05-18]
+      --ascending                    Sort ascending
+      --count <COUNT>                Number of results (default: 50) [default: 50]
+
+```
+
+Parameters
+
+```
+--scanner-type: 排行類型，預設 change-percent-rank
+--date:         交易日（YYYY-MM-DD），預設今天
+--ascending:    選填 flag，加上即由大到小排序（不加為由小到大）
+--count:        排行數量，預設 50
+
+```
+
+Scanners
+
+```
+POST /api/v1/data/scanner
+Content-Type: application/json
+
+{
+  "scanner_type": <ScannerType>,
+  "date":         <string>,
+  "ascending":    <bool>,
+  "count":        <int>
+}
+
+```
+
+Parameters
+
+```
+scanner_type: 排行類型 {'ChangePercentRank', 'ChangePriceRank', 'DayRangeRank', 'VolumeRank', 'AmountRank', 'TickCountRank'}
+date:         交易日（YYYY-MM-DD）
+ascending:    排序方向（true=由大到小、false=由小到大）
+count:        排行數量，預設 200
+
+```
+
+支援的排行類別
+
+```
+ChangePercentRank: 依價格漲跌幅排序
+ChangePriceRank:   依價格漲跌排序
+DayRangeRank:      依高低價差排序
+VolumeRank:        依成交量排序
+AmountRank:        依成交金額排序
+TickCountRank:     依成交筆數排序
+
+```
+
+## 屬性
+
+ScannerItem
+
+```
+date (str):             交易日
+code (str):             股票代號
+name (str):             股票名稱
+ts / datetime:          時間（Python 為 Unix 時間戳，其他語言為 ISO 字串）
+open (float):           開盤價
+high (float):           最高價
+low (float):            最低價
+close (float):          收盤價
+price_range (float):    價格區間（最高價 - 最低價）
+tick_type (int):        內外盤別 {1: 內盤, 2: 外盤, 0: 無法判定}
+change_price (float):   價格漲跌
+change_type (int):      漲跌 {LimitUp, Up, Unchanged, Down, LimitDown}
+average_price (float):  均價
+volume (int):           成交量
+total_volume (int):     總成交量
+amount (int):           成交額
+total_amount (int):     總成交額
+yesterday_volume (int): 昨日總成交量
+volume_ratio (float):   總成交量 / 昨日總成交量
+buy_price (float):      委買價
+buy_volume (int):       委買量
+sell_price (float):     委賣價
+sell_volume (int):      委賣量
+bid_orders (int):       內盤總成交單量
+bid_volumes (int):      內盤總成交量
+ask_orders (int):       外盤總成交單量
+ask_volumes (int):      外盤總成交量
+rank_value (float):     排序值（依 scanner_type 而定）
+
+```
+
+## 範例
+
+In
+
+```
+scanners = api.scanners(
+    scanner_type=sj.ScannerType.ChangePercentRank,
+    count=1
+)
+scanners
+
+```
+
+Out
+
+```
+[ScannerItem(
+    date='2026-05-18',
+    code='2233',
+    name='宇隆',
+    ts=1779114600000000000,
+    open=291,
+    high=324.5,
+    low=290,
+    close=324.5,
+    price_range=34.5,
+    tick_type=1,
+    change_price=29.5,
+    change_type=1,
+    average_price=311.65,
+    volume=2,
+    total_volume=1570,
+    amount=649000,
+    total_amount=489327500,
+    yesterday_volume=762,
+    volume_ratio=2.06,
+    buy_price=324.5,
+    buy_volume=40,
+    sell_price=0,
+    sell_volume=0,
+    bid_orders=41,
+    bid_volumes=1162,
+    ask_orders=15,
+    ask_volumes=408,
+    rank_value=10
+)]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+scanners = api.scanners(
+    scanner_type=sj.ScannerType.ChangePercentRank,
+    count=5
+)
+import polars as pl
+df = pl.DataFrame(s.dict() for s in scanners).with_columns(
+    pl.col("ts").cast(pl.Datetime("ns"))
+)
+df
+
+```
+
+Out
+
+| date | code | name | ts | open | high | low | close | price_range | tick_type | change_price | change_type | average_price | volume | total_volume | amount | total_amount | yesterday_volume | volume_ratio | buy_price | buy_volume | sell_price | sell_volume | bid_orders | bid_volumes | ask_orders | ask_volumes | rank_value | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 2026-05-18 | 2233 | 宇隆 | 2026-05-18 14:30:00 | 291.0 | 324.5 | 290.0 | 324.5 | 34.5 | 1 | 29.5 | 1 | 311.65 | 2 | 1570 | 649000 | 489327500 | 762.0 | 2.06 | 324.5 | 40 | 0.0 | 0 | 41 | 1162 | 15 | 408 | 10.0 | | 2026-05-18 | 3663 | 鑫科 | 2026-05-18 14:30:00 | 68.2 | 75.9 | 66.7 | 75.9 | 9.2 | 1 | 6.9 | 1 | 73.26 | 1 | 5501 | 75900 | 403048100 | 3614.0 | 1.52 | 75.9 | 519 | 0.0 | 0 | 1126 | 4287 | 680 | 1214 | 10.0 | | 2026-05-18 | 6285 | 啟碁 | 2026-05-18 14:30:00 | 254.0 | 286.0 | 254.0 | 286.0 | 32.0 | 1 | 26.0 | 1 | 277.48 | 34 | 38135 | 9724000 | 10582011500 | 20370.0 | 1.87 | 286.0 | 5212 | 0.0 | 0 | 6589 | 28976 | 2876 | 9159 | 10.0 | | 2026-05-18 | 6719 | 力智 | 2026-05-18 14:30:00 | 198.0 | 220.0 | 197.0 | 220.0 | 23.0 | 1 | 20.0 | 1 | 214.6 | 99 | 3621 | 21780000 | 777081500 | 1392.0 | 2.6 | 219.5 | 5 | 220.0 | 80 | 930 | 2567 | 547 | 1054 | 10.0 | | 2026-05-18 | 8064 | 東捷 | 2026-05-18 14:30:00 | 118.0 | 132.0 | 117.5 | 132.0 | 14.5 | 1 | 12.0 | 1 | 127.16 | 29 | 5154 | 3828000 | 655530500 | 6111.0 | 0.84 | 131.5 | 60 | 132.0 | 618 | 33 | 3471 | 22 | 1683 | 10.0 |
+
+In
+
+```
+shioaji data scanner --scanner-type change-percent-rank --count 1 --ascending
+
+```
+
+Out
+
+```
+[1]{date,code,name,datetime,open,high,low,close,price_range,tick_type,change_price,change_type,average_price,volume,total_volume,amount,total_amount,yesterday_volume,volume_ratio,buy_price,buy_volume,sell_price,sell_volume,bid_orders,bid_volumes,ask_orders,ask_volumes,rank_value}:
+  "2026-05-18","2233","宇隆            ",2026-05-18T14:30:00,291,324.5,290,324.5,34.5,1,29.5,1,311.65,2,1570,649000,489327500,762,2.06,324.5,40,0,0,41,1162,15,408,10
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/scanner \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "scanner_type": "ChangePercentRank",
+    "date": "2026-05-18",
+    "ascending": true,
+    "count": 1
+  }'
+
+```
+
+Out
+
+```
+[{"date":"2026-05-18","code":"2233","name":"宇隆            ","datetime":"2026-05-18T14:30:00","open":291.0,"high":324.5,"low":290.0,"close":324.5,"price_range":34.5,"tick_type":1,"change_price":29.5,"change_type":1,"average_price":311.65,"volume":2,"total_volume":1570,"amount":649000,"total_amount":489327500,"yesterday_volume":762,"volume_ratio":2.06,"buy_price":324.5,"buy_volume":40,"sell_price":0.0,"sell_volume":0,"bid_orders":41,"bid_volumes":1162,"ask_orders":15,"ask_volumes":408,"rank_value":10.0}]
+
+```
+
+ShortStockSources
+
+```
+api.short_stock_sources?
+
+Signature:
+    api.short_stock_sources(
+        contracts: List[shioaji.contracts.Stock],
+        timeout: int = 5000,
+        cb: Callable[[shioaji.data.ShortStockSource], NoneType] = None,
+    ) -> List[shioaji.data.ShortStockSource]
+
+```
+
+Parameters
+
+```
+contracts: 商品檔列表（由 api.Contracts.Stocks.* 取得）
+timeout:   逾時毫秒
+cb:        選填，callback 函式，timeout=0 時使用
+
+```
+
+CLI 目前不支援或有券源查詢，請改用 Python / HTTP。
+
+ShortStockSources
+
+```
+POST /api/v1/data/short_stock_sources
+Content-Type: application/json
+
+{
+  "contracts": [
+    { "security_type": "STK", "exchange": <Exchange>, "code": <string> }
+  ]
+}
+
+```
+
+Parameters
+
+```
+contracts:                 商品檔列表
+contracts[].security_type: 商品類型 {'STK'}
+contracts[].exchange:      交易所 {'TSE', 'OTC'}
+contracts[].code:          商品代碼（例如 2330）
+
+```
+
+提醒
+
+或有券源僅支援證券 (`security_type` = `"STK"`)。
+
+## 屬性
+
+ShortStockSource
+
+```
+code (str):               商品代碼
+short_stock_source (int): 或有券源
+ts / datetime:            時間（Python 為 Unix 時間戳，其他語言為 ISO 字串）
+
+```
+
+## 範例
+
+In
+
+```
+contracts = [api.Contracts.Stocks['2330'], api.Contracts.Stocks['2317']]
+short_stock_sources = api.short_stock_sources(contracts)
+short_stock_sources
+
+```
+
+Out
+
+```
+[ShortStockSource(code='2330', short_stock_source=0, ts=1779099174000000000),
+ ShortStockSource(code='2317', short_stock_source=1225, ts=1779099174000000000)]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+df = pl.DataFrame(s.dict() for s in short_stock_sources).with_columns(
+    pl.col("ts").cast(pl.Datetime("ns"))
+)
+df
+
+```
+
+Out
+
+| code | short_stock_source | ts | | --- | --- | --- | | 2330 | 0 | 2026-05-18 10:12:54 | | 2317 | 1225 | 2026-05-18 10:12:54 |
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/short_stock_sources \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contracts": [
+      {"security_type": "STK", "exchange": "TSE", "code": "2330"},
+      {"security_type": "STK", "exchange": "TSE", "code": "2317"}
+    ]
+  }'
+
+```
+
+Out
+
+```
+[{"code":"2330","short_stock_source":0,"datetime":"2026-05-18T10:13:47"},{"code":"2317","short_stock_source":1225,"datetime":"2026-05-18T10:13:47"}]
+
+```
+
+市場快照為證券、期貨及選擇權當下資訊。內容包含開盤價、最高價、最低價、收盤價、變動價、均價、成交量、總成交量、委買價、委買量、委賣價、委賣量和昨量。
+
+注意
+
+市場快照查詢會佔用流量，請參考[使用限制](../../limit/)了解每日流量上限。
+
+提醒
+
+市場快照每次最多 500 檔商品。
+
+Snapshots
+
+```
+api.snapshots?
+
+Signature:
+    api.snapshots(
+        contracts: List[Union[shioaji.contracts.Option, shioaji.contracts.Future, shioaji.contracts.Stock, shioaji.contracts.Index]],
+        timeout: int = 30000,
+        cb: Callable[[shioaji.data.Snapshot], NoneType] = None,
+    ) -> List[shioaji.data.Snapshot]
+Docstring:
+    get contract snapshot info
+
+```
+
+Parameters
+
+```
+contracts: 商品檔列表（由 api.Contracts.* 取得），最多 500 檔
+timeout:   逾時毫秒
+cb:        選填，callback 函式，timeout=0 時使用
+
+```
+
+Snapshots
+
+```
+$ shioaji data snapshots --help
+
+Get snapshots for multiple contracts
+
+Usage: shioaji data snapshots [OPTIONS] --codes <CODES>
+
+Options:
+      --codes <CODES>                  Comma-separated security codes (e.g. 2330,2317,2454)
+      --security-type <SECURITY_TYPE>  Security type: STK, FUT, OPT, IND [default: STK]
+      --exchange <EXCHANGE>            Exchange: TSE, OTC, TAIFEX [default: TSE]
+
+```
+
+Parameters
+
+```
+--codes:         商品代碼，以逗號分隔（例如 2330,2317,2454）
+--security-type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+--exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+
+```
+
+Snapshots
+
+```
+POST /api/v1/data/snapshots
+Content-Type: application/json
+
+{
+  "contracts": [
+    { "security_type": <SecurityType>, "exchange": <Exchange>, "code": <string> }
+  ]
+}
+
+```
+
+Parameters
+
+```
+contracts:                 商品檔列表，最多 500 檔
+contracts[].security_type: 商品類型 {'STK', 'FUT', 'OPT', 'IND'}
+contracts[].exchange:      交易所 {'TSE', 'OTC', 'TAIFEX'}
+contracts[].code:          商品代碼（例如 2330、TXFR1）
+
+```
+
+## 屬性
+
+Snapshot
+
+```
+ts / datetime:            時間（Python 為 Unix 時間戳，其他語言為 ISO 字串）
+code (str):               商品代碼
+exchange (Exchange):      交易所
+open (float):             開盤價
+high (float):             最高價
+low (float):              最低價
+close (float):            收盤價
+tick_type (TickType):     收盤買賣別 {None, Buy, Sell}
+change_price (float):     漲跌
+change_rate (float):      漲跌幅
+change_type (ChangeType): 漲跌 {LimitUp, Up, Unchanged, Down, LimitDown}
+average_price (float):    均價
+volume (int):             單量
+total_volume (int):       成交量
+amount (int):             單量成交額
+total_amount (int):       成交額
+yesterday_volume (float): 昨量
+buy_price (float):        委買價
+buy_volume (float):       委買量
+sell_price (float):       賣出價
+sell_volume (int):        委賣量
+volume_ratio (float):     昨量比
+
+```
+
+## 範例
+
+In
+
+```
+contracts = [api.Contracts.Stocks['2330'], api.Contracts.Stocks['2317']]
+snapshots = api.snapshots(contracts)
+snapshots
+
+```
+
+Out
+
+```
+[
+    Snapshot(
+        ts=1779114600000000000,
+        code='2330',
+        exchange='TSE',
+        open=2225,
+        high=2260,
+        low=2215,
+        close=2240,
+        tick_type=<TickType.Sell: 'Sell'>,
+        change_price=-25,
+        change_rate=-1.1,
+        change_type=<ChangeType.Down: 'Down'>,
+        average_price=2234.72,
+        volume=75,
+        total_volume=25820,
+        amount=168000000,
+        total_amount=57700920000,
+        yesterday_volume=29811,
+        buy_price=2240,
+        buy_volume=524,
+        sell_price=2245,
+        sell_volume=103,
+        volume_ratio=0.87
+    ),
+    Snapshot(
+        ts=1779114600000000000,
+        code='2317',
+        exchange='TSE',
+        open=251,
+        high=251,
+        low=241,
+        close=248.5,
+        tick_type=<TickType.Sell: 'Sell'>,
+        change_price=0,
+        change_rate=0,
+        change_type=<ChangeType.Unchanged: 'Unchanged'>,
+        average_price=246.67,
+        volume=58,
+        total_volume=60665,
+        amount=14413000,
+        total_amount=14964920500,
+        yesterday_volume=134926,
+        buy_price=248.5,
+        buy_volume=415,
+        sell_price=249,
+        sell_volume=368,
+        volume_ratio=0.45
+    )
+]
+
+```
+
+**轉成 DataFrame（以 polars 示範）**
+
+In
+
+```
+import polars as pl
+df = pl.DataFrame(s.dict() for s in snapshots).with_columns(
+    pl.col("ts").cast(pl.Datetime("ns"))
+)
+df
+
+```
+
+Out
+
+| ts | code | exchange | open | high | low | close | tick_type | change_price | change_rate | change_type | average_price | volume | total_volume | amount | total_amount | yesterday_volume | buy_price | buy_volume | sell_price | sell_volume | volume_ratio | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | | 2026-05-18 14:30:00 | 2330 | TSE | 2225.0 | 2260.0 | 2215.0 | 2240.0 | TickType.Sell | -25.0 | -1.1 | ChangeType.Down | 2234.72 | 75 | 25820 | 168000000 | 57700920000 | 29811.0 | 2240.0 | 524 | 2245.0 | 103 | 0.87 | | 2026-05-18 14:30:00 | 2317 | TSE | 251.0 | 251.0 | 241.0 | 248.5 | TickType.Sell | 0.0 | 0.0 | ChangeType.Unchanged | 246.67 | 58 | 60665 | 14413000 | 14964920500 | 134926.0 | 248.5 | 415 | 249.0 | 368 | 0.45 |
+
+In
+
+```
+shioaji data snapshots --codes 2330,2317
+
+```
+
+Out
+
+```
+[2]{datetime,code,exchange,open,high,low,close,tick_type,change_price,change_rate,change_type,average_price,volume,total_volume,amount,total_amount,yesterday_volume,buy_price,buy_volume,sell_price,sell_volume,volume_ratio}:
+  2026-05-18T14:30:00,"2330",TSE,2225,2260,2215,2240,Sell,-25,-1.1,Down,2234.72,75,25820,168000000,57700920000,29811,2240,524,2245,103,0.87
+  2026-05-18T14:30:00,"2317",TSE,251,251,241,248.5,Sell,0,0,Unchanged,246.67,58,60665,14413000,14964920500,134926,248.5,415,249,368,0.45
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/data/snapshots \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contracts": [
+      {"security_type": "STK", "exchange": "TSE", "code": "2330"},
+      {"security_type": "STK", "exchange": "TSE", "code": "2317"}
+    ]
+  }'
+
+```
+
+Out
+
+```
+[{"datetime":"2026-05-18T14:30:00","code":"2330","exchange":"TSE","open":2225.0,"high":2260.0,"low":2215.0,"close":2240.0,"tick_type":"Sell","change_price":-25.0,"change_rate":-1.1,"change_type":"Down","average_price":2234.72,"volume":75,"total_volume":25820,"amount":168000000,"total_amount":57700920000,"yesterday_volume":29811.0,"buy_price":2240.0,"buy_volume":524.0,"sell_price":2245.0,"sell_volume":103,"volume_ratio":0.87},{"datetime":"2026-05-18T14:30:00","code":"2317","exchange":"TSE","open":251.0,"high":251.0,"low":241.0,"close":248.5,"tick_type":"Sell","change_price":0.0,"change_rate":0.0,"change_type":"Unchanged","average_price":246.67,"volume":58,"total_volume":60665,"amount":14413000,"total_amount":14964920500,"yesterday_volume":134926.0,"buy_price":248.5,"buy_volume":415.0,"sell_price":249.0,"sell_volume":368,"volume_ratio":0.45}]
+
+```
+
+期貨 / 選擇權即時行情是交易所即時轉送的市場資料，僅在開盤時段才會推送。利用訂閱[商品檔](../../../contract/)的方式即可開始接收即時行情。
+
+提醒
+
+即時行情訂閱不會佔用流量。
+
+連續月（TXFR1 / TXFR2）訂閱說明
+
+- **Python / CLI** 可直接以 `TXFR1` / `TXFR2` 訂閱，binding 自行解析對應的實際商品代碼。
+- **HTTP 及其他語言** 必須先呼叫 [商品檔查詢](../../../contract/) 取出 `target_code`（例如 `TXFF6`），訂閱時於 body 同時帶入 `code: "TXFR1"` 與 `target_code: "TXFF6"`，否則 server 雖回 200 但 SSE 只會收到 heartbeat、收不到任何 tick。
+
+Subscribe
+
+```
+>> api.subscribe?
+
+Signature:
+    api.subscribe(
+        contract: shioaji.Contract,
+        quote_type: shioaji.QuoteType = <QuoteType.Tick: 'tick'>,
+        intraday_odd: bool = False,
+    )
+
+```
+
+Quote Parameters:
+
+```
+contract:     要訂閱的商品檔（由 api.Contracts.Futures.* 或 api.Contracts.Options.* 取得）
+quote_type:   訂閱類型 {'tick', 'bid_ask', 'quote'}
+intraday_odd: 期貨 / 選擇權不支援，固定為 False
+
+```
+
+Subscribe
+
+```
+$ shioaji data stream --help
+
+Stream real-time market data (SSE, Ctrl+C to stop)
+
+Usage: shioaji data stream [OPTIONS] --code <CODE>
+
+Options:
+      --code <CODE>                   Security code (e.g. 2330, TXFR1)
+      --quote-type <QUOTE_TYPE>       Quote type: tick, bid_ask, quote [default: tick]
+      --security-type <SECURITY_TYPE> Security type: STK, FUT, OPT, IND [default: STK]
+      --intraday-odd                  Include intraday odd lot trades
+
+```
+
+Quote Parameters:
+
+```
+--code:          要訂閱的商品代碼（期貨 / 選擇權如 TXFR1、TXFF6、TXO20260526900C）
+--quote-type:    訂閱類型 {tick, bid_ask, quote}，預設 tick
+--security-type: 商品類型 {STK, FUT, OPT, IND}，期貨填 FUT、選擇權填 OPT
+--intraday-odd:  期貨 / 選擇權不支援
+
+```
+
+Subscribe
+
+```
+POST /api/v1/stream/subscribe
+Content-Type: application/json
+
+{
+  "security_type": <SecurityType>,
+  "exchange":      <Exchange>,
+  "code":          <string>,
+  "target_code":   <string?>,
+  "quote_type":    <QuoteType>
+}
+
+```
+
+Quote Parameters:
+
+```
+security_type: 商品類型 {FUT, OPT}
+exchange:      交易所 {TAIFEX}
+code:          商品代碼（例 TXFR1、TXFF6、TXO20260526900C）
+target_code:   對應實際商品代碼。連續月（TXFR1 / TXFR2）必填，否則 server 雖回 200 但收不到資料
+quote_type:    訂閱類型 {Tick, BidAsk, Quote}
+
+```
+
+## Tick
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Tick,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Futures.TXF.TXFR1,
+#     quote_type=sj.QuoteType.Tick,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: TIC/v1/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+
+TickFOPv1(
+    code='TXFF6',
+    date=2026-05-20,
+    time=18:46:34,
+    close=40629,
+    volume=1,
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback) 章節自訂 callback 函式。
+
+In
+
+```
+shioaji data stream --code TXFR1 --security-type FUT --quote-type tick
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to TXFR1 tick (Ctrl+C to stop)
+{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "18:50:02.981000",
+  "open": "40270",
+  "target_kind_price": "40020.82",
+  "trade_bid_vol_sum": 7498,
+  "trade_ask_vol_sum": 5817,
+  "avg_price": "40460.163149",
+  "close": "40619",
+  "high": "40650",
+  "low": "40221",
+  "amount": "81238",
+  "amount_sum": "552038466",
+  "volume": 2,
+  "vol_sum": 13644,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "495",
+  "diff_rate": "1.233676",
+  "simtrade": false
+}
+
+```
+
+In
+
+```
+# 步驟 1：先查商品檔，取出 target_code
+curl http://localhost:8080/api/v1/data/contracts/TXFR1?security_type=FUT
+
+# 步驟 2：以上一步回傳的 target_code（例 TXFF6）訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TXFR1",
+    "target_code": "TXFF6",
+    "quote_type": "Tick"
+  }'
+
+# 步驟 3：開 SSE 收 tick（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/tick_fop
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "FUT",
+#     "exchange": "TAIFEX",
+#     "code": "TXFR1",
+#     "target_code": "TXFF6",
+#     "quote_type": "Tick"
+#   }'
+
+```
+
+Out（步驟 1：商品檔回應）
+
+```
+{"security_type":"FUT","exchange":"TAIFEX","code":"TXFR1","symbol":"TXFR1","name":"臺股期貨近月","category":"TXF","currency":"TWD","delivery_month":"202606","delivery_date":"2026/06/17","strike_price":0.0,"option_right":"","underlying_kind":"I","underlying_code":"","unit":1.0,"multiplier":0,"limit_up":44136.0,"limit_down":36112.0,"reference":40124.0,"update_date":"2026/05/20","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":"TXFF6"}
+
+```
+
+Out（步驟 3：SSE tick）
+
+```
+event:tick_fop
+data:{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "18:54:43.871000",
+  "open": "40270",
+  "target_kind_price": "40020.82",
+  "trade_bid_vol_sum": 7540,
+  "trade_ask_vol_sum": 5908,
+  "avg_price": "40461.608055",
+  "close": "40608",
+  "high": "40650",
+  "low": "40221",
+  "amount": "40608",
+  "amount_sum": "557560959",
+  "volume": 1,
+  "vol_sum": 13780,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "484",
+  "diff_rate": "1.206261",
+  "simtrade": false
+}
+
+```
+
+### 屬性
+
+Tick
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             成交時間
+datetime (tuple)                         日期與時間
+open (Decimal)                           開盤價
+target_kind_price (Decimal)              標的指數現價
+avg_price (Decimal)                      均價
+close (Decimal)                          成交價
+high (Decimal)                           最高價（自開盤）
+low (Decimal)                            最低價（自開盤）
+amount (Decimal)                         單筆成交額 (NTD)
+amount_sum (Decimal)                     總成交額 (NTD)
+volume (int)                             單筆成交量 (lot)
+vol_sum (int)                            總成交量 (lot)
+tick_type (int)                          內外盤別{1: 外盤, 2: 內盤, 0: 無法判定}
+diff_type (int)                          漲跌註記{1: 漲停, 2: 漲, 3: 平盤, 4: 跌, 5: 跌停}
+diff_price (Decimal)                     漲跌
+diff_rate (Decimal)                      漲跌幅 (%)
+trade_bid_vol_sum (int)                  買盤成交總量 (lot)
+trade_ask_vol_sum (int)                  賣盤成交總量 (lot)
+simtrade (bool)                          試撮
+
+```
+
+## BidAsk
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Futures.TXF.TXFR1,
+#     quote_type=sj.QuoteType.BidAsk,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v1/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+
+BidAskFOPv1(
+    code='TXFF6',
+    date=2026-05-20,
+    time=19:23:01,
+    bid_price=[40605, 40603, 40602, 40601, 40600],
+    ask_price=[40607, 40608, 40610, 40611, 40612],
+    bid_volume=[1, 4, 2, 5, 5],
+    ask_volume=[1, 1, 5, 2, 2],
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback) 章節自訂 callback 函式。
+
+In
+
+```
+shioaji data stream --code TXFR1 --security-type FUT --quote-type bid_ask
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to TXFR1 bid_ask (Ctrl+C to stop)
+{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "19:24:03.012000",
+  "bid_vol_sum": 8,
+  "ask_vol_sum": 19,
+  "bid_price": ["40615", "40613", "40612", "40611", "40610"],
+  "bid_volume": [1, 2, 1, 2, 2],
+  "diff_bid_vol": [0, 0, 0, 0, 1],
+  "ask_price": ["40618", "40619", "40620", "40621", "40622"],
+  "ask_volume": [6, 2, 3, 2, 6],
+  "diff_ask_vol": [0, -1, -1, 0, 0],
+  "first_derived_bid_price": "0",
+  "first_derived_ask_price": "40622",
+  "first_derived_bid_volume": 0,
+  "first_derived_ask_volume": 1,
+  "target_kind_price": "40020.82",
+  "simtrade": false
+}
+
+```
+
+In
+
+```
+# 步驟 1：先查商品檔，取出 target_code
+curl http://localhost:8080/api/v1/data/contracts/TXFR1?security_type=FUT
+
+# 步驟 2：以上一步回傳的 target_code（例 TXFF6）訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TXFR1",
+    "target_code": "TXFF6",
+    "quote_type": "BidAsk"
+  }'
+
+# 步驟 3：開 SSE 收 bid/ask（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/bidask_fop
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "FUT",
+#     "exchange": "TAIFEX",
+#     "code": "TXFR1",
+#     "target_code": "TXFF6",
+#     "quote_type": "BidAsk"
+#   }'
+
+```
+
+Out（步驟 1：商品檔回應）
+
+```
+{"security_type":"FUT","exchange":"TAIFEX","code":"TXFR1","symbol":"TXFR1","name":"臺股期貨近月","category":"TXF","currency":"TWD","delivery_month":"202606","delivery_date":"2026/06/17","strike_price":0.0,"option_right":"","underlying_kind":"I","underlying_code":"","unit":1.0,"multiplier":0,"limit_up":44136.0,"limit_down":36112.0,"reference":40124.0,"update_date":"2026/05/20","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":"TXFF6"}
+
+```
+
+Out（步驟 3：SSE bid/ask）
+
+```
+event:bidask_fop
+data:{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "19:24:38.512000",
+  "bid_vol_sum": 19,
+  "ask_vol_sum": 20,
+  "bid_price": ["40613", "40612", "40611", "40610", "40609"],
+  "bid_volume": [1, 3, 5, 3, 7],
+  "diff_bid_vol": [-1, 0, 0, 0, 2],
+  "ask_price": ["40618", "40619", "40620", "40621", "40622"],
+  "ask_volume": [6, 2, 4, 2, 6],
+  "diff_ask_vol": [0, 0, 0, 0, 0],
+  "first_derived_bid_price": "0",
+  "first_derived_ask_price": "40622",
+  "first_derived_bid_volume": 0,
+  "first_derived_ask_volume": 1,
+  "target_kind_price": "40020.82",
+  "simtrade": false
+}
+
+```
+
+### 屬性
+
+BidAsk
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             時間
+datetime (tuple)                         日期與時間
+bid_vol_sum (int)                        委買量總計 (lot)
+ask_vol_sum (int)                        委賣量總計 (lot)
+bid_price (list[Decimal])                五檔委買價
+bid_volume (list[int])                   五檔委買量 (lot)
+diff_bid_vol (list[int])                 五檔委買價增減量 (lot)
+ask_price (list[Decimal])                五檔委賣價
+ask_volume (list[int])                   五檔委賣量 (lot)
+diff_ask_vol (list[int])                 五檔委賣價增減量 (lot)
+first_derived_bid_price (Decimal)        衍生一檔委買價
+first_derived_ask_price (Decimal)        衍生一檔委賣價
+first_derived_bid_volume (int)           衍生一檔委買量 (lot)
+first_derived_ask_volume (int)           衍生一檔委賣量 (lot)
+target_kind_price (Decimal)              標的指數現價
+simtrade (bool)                          試撮
+
+```
+
+## Quote
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Quote,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Futures.TXF.TXFR1,
+#     quote_type=sj.QuoteType.Quote,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v2/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+
+QuoteFOPv1(
+    code='TXFF6',
+    date=2026-05-20,
+    time=19:28:57,
+    close=40610,
+    volume=0,
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback) 章節自訂 callback 函式。
+
+In
+
+```
+shioaji data stream --code TXFR1 --security-type FUT --quote-type quote
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to TXFR1 quote (Ctrl+C to stop)
+{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "19:29:39.887000",
+  "target_kind_price": "40020.82",
+  "open": "40270",
+  "avg_price": "40466.730155",
+  "close": "40616",
+  "high": "40650",
+  "low": "40221",
+  "amount": "40616",
+  "amount_sum": "578107707",
+  "volume": 0,
+  "vol_sum": 14286,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "492",
+  "diff_rate": "1.226199",
+  "trade_bid_vol_sum": 7773,
+  "trade_ask_vol_sum": 6172,
+  "trade_bid_cnt": 9924,
+  "trade_ask_cnt": 10442,
+  "bid_price": ["40613", "40612", "40611", "40610", "40609"],
+  "bid_volume": [2, 4, 6, 2, 4],
+  "diff_bid_vol": [0, 0, 0, 0, 0],
+  "ask_price": ["40617", "40618", "40619", "40620", "40621"],
+  "ask_volume": [6, 7, 3, 4, 3],
+  "diff_ask_vol": [0, 0, 0, 0, 0],
+  "first_derived_bid_price": "0",
+  "first_derived_ask_price": "0",
+  "first_derived_bid_volume": 0,
+  "first_derived_ask_volume": 0,
+  "simtrade": false
+}
+
+```
+
+In
+
+```
+# 步驟 1：先查商品檔，取出 target_code
+curl http://localhost:8080/api/v1/data/contracts/TXFR1?security_type=FUT
+
+# 步驟 2：以上一步回傳的 target_code（例 TXFF6）訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TXFR1",
+    "target_code": "TXFF6",
+    "quote_type": "Quote"
+  }'
+
+# 步驟 3：開 SSE 收 quote（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/quote_fop
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "FUT",
+#     "exchange": "TAIFEX",
+#     "code": "TXFR1",
+#     "target_code": "TXFF6",
+#     "quote_type": "Quote"
+#   }'
+
+```
+
+Out（步驟 1：商品檔回應）
+
+```
+{"security_type":"FUT","exchange":"TAIFEX","code":"TXFR1","symbol":"TXFR1","name":"臺股期貨近月","category":"TXF","currency":"TWD","delivery_month":"202606","delivery_date":"2026/06/17","strike_price":0.0,"option_right":"","underlying_kind":"I","underlying_code":"","unit":1.0,"multiplier":0,"limit_up":44136.0,"limit_down":36112.0,"reference":40124.0,"update_date":"2026/05/20","margin_trading_balance":0,"short_selling_balance":0,"day_trade":"","target_code":"TXFF6"}
+
+```
+
+Out（步驟 3：SSE quote）
+
+```
+event:quote_fop
+data:{
+  "code": "TXFF6",
+  "date": "2026-05-20",
+  "time": "19:30:16.137000",
+  "target_kind_price": "40020.82",
+  "open": "40270",
+  "avg_price": "40467.061396",
+  "close": "40624",
+  "high": "40650",
+  "low": "40221",
+  "amount": "40624",
+  "amount_sum": "579366918",
+  "volume": 0,
+  "vol_sum": 14317,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "500",
+  "diff_rate": "1.246137",
+  "trade_bid_vol_sum": 7804,
+  "trade_ask_vol_sum": 6172,
+  "trade_bid_cnt": 9947,
+  "trade_ask_cnt": 10468,
+  "bid_price": ["40620", "40618", "40617", "40616", "40615"],
+  "bid_volume": [1, 7, 3, 7, 8],
+  "diff_bid_vol": [0, 0, 0, 0, 2],
+  "ask_price": ["40624", "40625", "40626", "40627", "40628"],
+  "ask_volume": [4, 3, 1, 1, 4],
+  "diff_ask_vol": [1, 0, 0, 0, 0],
+  "first_derived_bid_price": "0",
+  "first_derived_ask_price": "0",
+  "first_derived_bid_volume": 0,
+  "first_derived_ask_volume": 0,
+  "simtrade": false
+}
+
+```
+
+### 屬性
+
+Quote
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             成交時間
+datetime (tuple)                         日期與時間
+target_kind_price (Decimal)              標的指數現價
+open (Decimal)                           開盤價
+avg_price (Decimal)                      均價
+close (Decimal)                          成交價
+high (Decimal)                           最高價（自開盤）
+low (Decimal)                            最低價（自開盤）
+amount (Decimal)                         單筆成交額 (NTD)
+amount_sum (Decimal)                     總成交額 (NTD)
+volume (int)                             單筆成交量 (lot)
+vol_sum (int)                            總成交量 (lot)
+tick_type (int)                          內外盤別{1: 外盤, 2: 內盤, 0: 無法判定}
+diff_type (int)                          漲跌註記{1: 漲停, 2: 漲, 3: 平盤, 4: 跌, 5: 跌停}
+diff_price (Decimal)                     漲跌
+diff_rate (Decimal)                      漲跌幅 (%)
+trade_bid_vol_sum (int)                  買盤成交總量 (lot)
+trade_ask_vol_sum (int)                  賣盤成交總量 (lot)
+trade_bid_cnt (int)                      買盤成交筆數
+trade_ask_cnt (int)                      賣盤成交筆數
+bid_price (list[Decimal])                五檔委買價
+bid_volume (list[int])                   五檔委買量 (lot)
+diff_bid_vol (list[int])                 五檔委買價增減量 (lot)
+ask_price (list[Decimal])                五檔委賣價
+ask_volume (list[int])                   五檔委賣量 (lot)
+diff_ask_vol (list[int])                 五檔委賣價增減量 (lot)
+first_derived_bid_price (Decimal)        衍生一檔委買價
+first_derived_ask_price (Decimal)        衍生一檔委賣價
+first_derived_bid_volume (int)           衍生一檔委買量 (lot)
+first_derived_ask_volume (int)           衍生一檔委賣量 (lot)
+simtrade (bool)                          試撮
+
+```
+
+## Callback（僅 Python）
+
+預設狀況下我們將即時行情使用 `print` 的方式呈現，僅顯示部分摘要欄位。可根據個人需求修改 callback 函式以取得完整欄位內容，並串接其他應用（行情管理、觸價單等）。請避免在函式內進行運算。
+
+### Tick
+
+decorator 方式
+
+```
+from shioaji import TickFOPv1, Exchange
+
+@api.on_tick_fop_v1()
+def quote_callback(exchange: Exchange, tick: TickFOPv1):
+    print(f"exchange={exchange}")
+    print(f"code={tick.code}")
+    print(f"date={tick.date}")
+    print(f"time={tick.time}")
+    print(f"datetime={tick.datetime}")
+    print(f"open={tick.open}")
+    print(f"target_kind_price={tick.target_kind_price}")
+    print(f"trade_bid_vol_sum={tick.trade_bid_vol_sum}")
+    print(f"trade_ask_vol_sum={tick.trade_ask_vol_sum}")
+    print(f"avg_price={tick.avg_price}")
+    print(f"close={tick.close}")
+    print(f"high={tick.high}")
+    print(f"low={tick.low}")
+    print(f"amount={tick.amount}")
+    print(f"amount_sum={tick.amount_sum}")
+    print(f"volume={tick.volume}")
+    print(f"vol_sum={tick.vol_sum}")
+    print(f"tick_type={tick.tick_type}")
+    print(f"diff_type={tick.diff_type}")
+    print(f"diff_price={tick.diff_price}")
+    print(f"diff_rate={tick.diff_rate}")
+    print(f"simtrade={tick.simtrade}")
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Tick,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import TickFOPv1, Exchange
+
+def quote_callback(exchange: Exchange, tick: TickFOPv1):
+    print(f"{exchange} {tick}")
+
+api.set_on_tick_fop_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Tick,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: TIC/v1/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TAIFEX
+code=TXFF6
+date=(2026, 5, 20)
+time=(19, 15, 1, 284000)
+datetime=(2026, 5, 20, 19, 15, 1, 284000)
+open=40270
+target_kind_price=40020.82
+trade_bid_vol_sum=7711
+trade_ask_vol_sum=6109
+avg_price=40465.465254
+close=40598
+high=40650
+low=40221
+amount=40598
+amount_sum=572990988
+volume=1
+vol_sum=14160
+tick_type=2
+diff_type=2
+diff_price=474
+diff_rate=1.181338
+simtrade=False
+
+```
+
+### BidAsk
+
+decorator 方式
+
+```
+from shioaji import BidAskFOPv1, Exchange
+
+@api.on_bidask_fop_v1()
+def quote_callback(exchange: Exchange, bidask: BidAskFOPv1):
+    print(f"exchange={exchange}")
+    print(f"code={bidask.code}")
+    print(f"date={bidask.date}")
+    print(f"time={bidask.time}")
+    print(f"datetime={bidask.datetime}")
+    print(f"bid_vol_sum={bidask.bid_vol_sum}")
+    print(f"ask_vol_sum={bidask.ask_vol_sum}")
+    print(f"bid_price={bidask.bid_price}")
+    print(f"bid_volume={bidask.bid_volume}")
+    print(f"diff_bid_vol={bidask.diff_bid_vol}")
+    print(f"ask_price={bidask.ask_price}")
+    print(f"ask_volume={bidask.ask_volume}")
+    print(f"diff_ask_vol={bidask.diff_ask_vol}")
+    print(f"first_derived_bid_price={bidask.first_derived_bid_price}")
+    print(f"first_derived_ask_price={bidask.first_derived_ask_price}")
+    print(f"first_derived_bid_volume={bidask.first_derived_bid_volume}")
+    print(f"first_derived_ask_volume={bidask.first_derived_ask_volume}")
+    print(f"target_kind_price={bidask.target_kind_price}")
+    print(f"simtrade={bidask.simtrade}")
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import BidAskFOPv1, Exchange
+
+def quote_callback(exchange: Exchange, bidask: BidAskFOPv1):
+    print(f"{exchange} {bidask}")
+
+api.set_on_bidask_fop_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v1/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TAIFEX
+code=TXFF6
+date=(2026, 5, 20)
+time=(19, 25, 54, 637000)
+datetime=(2026, 5, 20, 19, 25, 54, 637000)
+bid_vol_sum=21
+ask_vol_sum=21
+bid_price=[Decimal('40613'), Decimal('40612'), Decimal('40611'), Decimal('40610'), Decimal('40609')]
+bid_volume=[1, 2, 6, 4, 8]
+diff_bid_vol=[-1, 1, 0, 0, 0]
+ask_price=[Decimal('40617'), Decimal('40618'), Decimal('40619'), Decimal('40620'), Decimal('40621')]
+ask_volume=[4, 7, 5, 3, 2]
+diff_ask_vol=[-1, 0, 0, 0, 0]
+first_derived_bid_price=0
+first_derived_ask_price=0
+first_derived_bid_volume=0
+first_derived_ask_volume=0
+target_kind_price=40020.82
+simtrade=False
+
+```
+
+### Quote
+
+decorator 方式
+
+```
+from shioaji import QuoteFOPv1, Exchange
+
+@api.on_quote_fop_v1()
+def quote_callback(exchange: Exchange, quote: QuoteFOPv1):
+    print(f"exchange={exchange}")
+    print(f"code={quote.code}")
+    print(f"date={quote.date}")
+    print(f"time={quote.time}")
+    print(f"datetime={quote.datetime}")
+    print(f"target_kind_price={quote.target_kind_price}")
+    print(f"open={quote.open}")
+    print(f"avg_price={quote.avg_price}")
+    print(f"close={quote.close}")
+    print(f"high={quote.high}")
+    print(f"low={quote.low}")
+    print(f"amount={quote.amount}")
+    print(f"amount_sum={quote.amount_sum}")
+    print(f"volume={quote.volume}")
+    print(f"vol_sum={quote.vol_sum}")
+    print(f"tick_type={quote.tick_type}")
+    print(f"diff_type={quote.diff_type}")
+    print(f"diff_price={quote.diff_price}")
+    print(f"diff_rate={quote.diff_rate}")
+    print(f"trade_bid_vol_sum={quote.trade_bid_vol_sum}")
+    print(f"trade_ask_vol_sum={quote.trade_ask_vol_sum}")
+    print(f"trade_bid_cnt={quote.trade_bid_cnt}")
+    print(f"trade_ask_cnt={quote.trade_ask_cnt}")
+    print(f"bid_price={quote.bid_price}")
+    print(f"bid_volume={quote.bid_volume}")
+    print(f"diff_bid_vol={quote.diff_bid_vol}")
+    print(f"ask_price={quote.ask_price}")
+    print(f"ask_volume={quote.ask_volume}")
+    print(f"diff_ask_vol={quote.diff_ask_vol}")
+    print(f"first_derived_bid_price={quote.first_derived_bid_price}")
+    print(f"first_derived_ask_price={quote.first_derived_ask_price}")
+    print(f"first_derived_bid_volume={quote.first_derived_bid_volume}")
+    print(f"first_derived_ask_volume={quote.first_derived_ask_volume}")
+    print(f"simtrade={quote.simtrade}")
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Quote,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import QuoteFOPv1, Exchange
+
+def quote_callback(exchange: Exchange, quote: QuoteFOPv1):
+    print(f"{exchange} {quote}")
+
+api.set_on_quote_fop_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Futures.TXF.TXFR1,
+    quote_type=sj.QuoteType.Quote,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v2/FOP/*/TFE/TXFF6 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TAIFEX
+code=TXFF6
+date=(2026, 5, 20)
+time=(19, 31, 3, 387000)
+datetime=(2026, 5, 20, 19, 31, 3, 387000)
+target_kind_price=40020.82
+open=40270
+avg_price=40467.404028
+close=40629
+high=40650
+low=40221
+amount=121887
+amount_sum=580626313
+volume=0
+vol_sum=14348
+tick_type=1
+diff_type=2
+diff_price=505
+diff_rate=1.258598
+trade_bid_vol_sum=7825
+trade_ask_vol_sum=6182
+trade_bid_cnt=9966
+trade_ask_cnt=10498
+bid_price=[Decimal('40625'), Decimal('40624'), Decimal('40623'), Decimal('40622'), Decimal('40621')]
+bid_volume=[1, 3, 11, 6, 1]
+diff_bid_vol=[0, 0, 0, 0, 0]
+ask_price=[Decimal('40628'), Decimal('40629'), Decimal('40630'), Decimal('40631'), Decimal('40632')]
+ask_volume=[1, 1, 3, 4, 2]
+diff_ask_vol=[0, 0, 0, 0, 0]
+first_derived_bid_price=0
+first_derived_ask_price=0
+first_derived_bid_volume=0
+first_derived_ask_volume=0
+simtrade=False
+
+```
+
+即時行情是交易所即時轉送的市場資料，僅在開盤時段才會推送。利用訂閱[商品檔](../../../contract/)的方式即可開始接收即時行情。
+
+提醒
+
+即時行情訂閱不會佔用流量。
+
+Subscribe
+
+```
+>> api.subscribe?
+
+Signature:
+    api.subscribe(
+        contract: shioaji.Contract,
+        quote_type: shioaji.QuoteType = <QuoteType.Tick: 'tick'>,
+        intraday_odd: bool = False,
+    )
+
+```
+
+Quote Parameters:
+
+```
+contract:     要訂閱的商品檔（由 api.Contracts.* 取得）
+quote_type:   訂閱類型 {'tick', 'bid_ask', 'quote'}
+intraday_odd: 盤中零股 {True, False}
+
+```
+
+Subscribe
+
+```
+$ shioaji data stream --help
+
+Stream real-time market data (SSE, Ctrl+C to stop)
+
+Usage: shioaji data stream [OPTIONS] --code <CODE>
+
+Options:
+      --code <CODE>                   Security code (e.g. 2330, TXFR1)
+      --quote-type <QUOTE_TYPE>       Quote type: tick, bid_ask, quote [default: tick]
+      --security-type <SECURITY_TYPE> Security type: STK, FUT, OPT, IND [default: STK]
+      --intraday-odd                  Include intraday odd lot trades
+
+```
+
+Quote Parameters:
+
+```
+--code:          要訂閱的商品代碼（例如 2330、TXFR1）
+--quote-type:    訂閱類型 {tick, bid_ask, quote}，預設 tick
+--security-type: 商品類型 {STK, FUT, OPT, IND}，預設 STK
+--intraday-odd:  盤中零股（flag，加上即啟用）
+
+```
+
+Subscribe
+
+```
+POST /api/v1/stream/subscribe
+Content-Type: application/json
+
+{
+  "security_type": <SecurityType>,
+  "exchange":      <Exchange>,
+  "code":          <string>,
+  "target_code":   <string?>,
+  "quote_type":    <QuoteType>,
+  "intraday_odd":  <bool>
+}
+
+```
+
+Quote Parameters:
+
+```
+security_type: 商品類型 {STK, FUT, OPT, IND}
+exchange:      交易所 {TSE, OTC, OES, TAIFEX}
+code:          商品代碼（例如 2330、TXFE5）
+target_code:   對應實際商品代碼。選填，期貨連續月（TXFR1/R2）才會用到，股票不需指定
+quote_type:    訂閱類型 {Tick, BidAsk, Quote}
+intraday_odd:  盤中零股 {true, false}，預設 false
+
+```
+
+## Tick
+
+#### 整股
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Tick,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Stocks.TSE.TSE2890,
+#     quote_type=sj.QuoteType.Tick,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: TIC/v1/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+
+TickSTKv1(
+    code='2890',
+    date=2026-05-21,
+    time=09:14:55,
+    close=29.9,
+    volume=8,
+    high=30,
+    low=29.75,
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback-%E5%83%85-python) 章節自訂 callback 函式。
+
+#### 盤中零股
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Tick,
+    intraday_odd=True,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Stocks.TSE.TSE2890,
+#     quote_type=sj.QuoteType.Tick,
+#     intraday_odd=True,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: TIC/v1/ODD/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+
+TickSTKv1(
+    code='2890',
+    date=2026-05-21,
+    time=09:22:43,
+    close=30,
+    volume=100,
+    high=30.05,
+    low=29.9,
+)
+
+```
+
+**整股**
+
+In
+
+```
+shioaji data stream --code 2890 --quote-type tick
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to 2890 tick (Ctrl+C to stop)
+{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "09:16:15.060129",
+  "open": "29.8",
+  "avg_price": "29.86",
+  "close": "29.85",
+  "high": "30",
+  "low": "29.75",
+  "amount": "149250",
+  "amount_sum": "108902650",
+  "volume": 5,
+  "vol_sum": 3646,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "0.05",
+  "diff_rate": 16,
+  "trade_bid_vol_sum": 1760,
+  "trade_ask_vol_sum": 1321,
+  "trade_bid_cnt": 127,
+  "trade_ask_cnt": 61,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": "0",
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": "0",
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": false
+}
+
+```
+
+**盤中零股**
+
+In
+
+```
+shioaji data stream --code 2890 --quote-type tick --intraday-odd
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to 2890 tick (Ctrl+C to stop)
+{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "09:23:38.407268",
+  "open": "30.05",
+  "avg_price": "29.962006",
+  "close": "30",
+  "high": "30.05",
+  "low": "29.9",
+  "amount": "60",
+  "amount_sum": "640887.3",
+  "volume": 2,
+  "vol_sum": 21390,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "0.2",
+  "diff_rate": 67,
+  "trade_bid_vol_sum": 11006,
+  "trade_ask_vol_sum": 10384,
+  "trade_bid_cnt": 36,
+  "trade_ask_cnt": 20,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": null,
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": null,
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": true
+}
+
+```
+
+**整股**
+
+In
+
+```
+# 訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "quote_type": "Tick"
+  }'
+
+# 開 SSE 收 tick（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/tick_stk
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "STK",
+#     "exchange": "TSE",
+#     "code": "2890",
+#     "quote_type": "Tick"
+#   }'
+
+```
+
+Out
+
+```
+event:tick_stk
+data:{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "09:18:31.867798",
+  "open": "29.8",
+  "avg_price": "29.86",
+  "close": "29.9",
+  "high": "30",
+  "low": "29.75",
+  "amount": "29900",
+  "amount_sum": "109559950",
+  "volume": 1,
+  "vol_sum": 3668,
+  "tick_type": 1,
+  "diff_type": 2,
+  "diff_price": "0.1",
+  "diff_rate": 33,
+  "trade_bid_vol_sum": 1781,
+  "trade_ask_vol_sum": 1322,
+  "trade_bid_cnt": 135,
+  "trade_ask_cnt": 62,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": "0",
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": "0",
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": false
+}
+
+```
+
+**盤中零股**
+
+In
+
+```
+# 訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "quote_type": "Tick",
+    "intraday_odd": true
+  }'
+
+# 開 SSE 收 tick（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/tick_stk
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "STK",
+#     "exchange": "TSE",
+#     "code": "2890",
+#     "quote_type": "Tick",
+#     "intraday_odd": true
+#   }'
+
+```
+
+Out
+
+```
+event:tick_stk
+data:{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "09:25:04.321657",
+  "open": "30.05",
+  "avg_price": "29.963436",
+  "close": "29.95",
+  "high": "30.05",
+  "low": "29.9",
+  "amount": "1497.5",
+  "amount_sum": "683645.75",
+  "volume": 50,
+  "vol_sum": 22816,
+  "tick_type": 2,
+  "diff_type": 2,
+  "diff_price": "0.15",
+  "diff_rate": 50,
+  "trade_bid_vol_sum": 12001,
+  "trade_ask_vol_sum": 10815,
+  "trade_bid_cnt": 38,
+  "trade_ask_cnt": 24,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": null,
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": null,
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": true
+}
+
+```
+
+### 屬性
+
+Tick
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             成交時間
+datetime (tuple)                         日期與時間
+open (Decimal)                           開盤價
+avg_price (Decimal)                      均價
+close (Decimal)                          成交價
+high (Decimal)                           最高價（自開盤）
+low (Decimal)                            最低價（自開盤）
+amount (Decimal)                         單筆成交額 (NTD)
+amount_sum (Decimal)                     總成交額 (NTD)
+volume (int)                             單筆成交量（整股：張；盤中零股：股）
+vol_sum (int)                            總成交量（整股：張；盤中零股：股）
+tick_type (int)                          內外盤別{1: 外盤, 2: 內盤, 0: 無法判定}
+diff_type (int)                          漲跌註記{1: 漲停, 2: 漲, 3: 平盤, 4: 跌, 5: 跌停}
+diff_price (Decimal)                     漲跌
+diff_rate (int)                          漲跌幅 (%)
+trade_bid_vol_sum (int)                  買盤成交總量（整股：張；盤中零股：股）
+trade_ask_vol_sum (int)                  賣盤成交總量（整股：張；盤中零股：股）
+trade_bid_cnt (int)                      買盤成交筆數
+trade_ask_cnt (int)                      賣盤成交筆數
+closing_oddlot_shares (int)              盤後零股成交股數（股）
+closing_oddlot_close (Decimal)           盤後零股成交價
+closing_oddlot_amount (Decimal)          盤後零股成交額
+closing_oddlot_bid_price (Decimal)       盤後零股最高買價
+closing_oddlot_ask_price (Decimal)       盤後零股最低賣價
+fixed_trade_volume (int)                 定盤成交量（整股：張；盤中零股：股）
+fixed_trade_amount (Decimal)             定盤成交額
+suspend (bool)                           暫停交易
+simtrade (bool)                          試撮
+intraday_odd (bool)                      盤中零股 {True, False}
+
+```
+
+## BidAsk
+
+#### 整股
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Stocks.TSE.TSE2890,
+#     quote_type=sj.QuoteType.BidAsk,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v1/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+
+BidAskSTKv1(
+    code='2890',
+    date=2026-05-21,
+    time=09:53:26,
+    bid_price=[29.75, 29.7, 29.65, 29.6, 29.55],
+    ask_price=[29.8, 29.85, 29.9, 29.95, 30],
+    bid_volume=[252, 1369, 377, 631, 206],
+    ask_volume=[50, 101, 57, 156, 725],
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback-%E5%83%85-python) 章節自訂 callback 函式。
+
+#### 盤中零股
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.BidAsk,
+    intraday_odd=True,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Stocks.TSE.TSE2890,
+#     quote_type=sj.QuoteType.BidAsk,
+#     intraday_odd=True,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v1/ODD/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+
+BidAskSTKv1(
+    code='2890',
+    date=2026-05-21,
+    time=10:00:50,
+    bid_price=[29.85, 29.8, 29.75, 29.7, 29.65],
+    ask_price=[29.9, 29.95, 30, 30.05, 30.1],
+    bid_volume=[3552, 38563, 28811, 24393, 9313],
+    ask_volume=[1969, 7480, 8764, 2556, 1496],
+)
+
+```
+
+**整股**
+
+In
+
+```
+shioaji data stream --code 2890 --quote-type bid_ask
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to 2890 bid_ask (Ctrl+C to stop)
+{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:02:07.514794",
+  "bid_price": ["29.75", "29.7", "29.65", "29.6", "29.55"],
+  "bid_volume": [468, 1174, 369, 658, 208],
+  "diff_bid_vol": [1, 0, 0, 0, 0],
+  "ask_price": ["29.85", "29.9", "29.95", "30", "30.05"],
+  "ask_volume": [125, 92, 163, 731, 307],
+  "diff_ask_vol": [0, 0, 0, 0, 0],
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": false
+}
+
+```
+
+**盤中零股**
+
+In
+
+```
+shioaji data stream --code 2890 --quote-type bid_ask --intraday-odd
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to 2890 bid_ask (Ctrl+C to stop)
+{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:02:37.104099",
+  "bid_price": ["29.85", "29.8", "29.75", "29.7", "29.65"],
+  "bid_volume": [3459, 38649, 28661, 25073, 9533],
+  "diff_bid_vol": [4888, 8004, 14481, 5578, 2164],
+  "ask_price": ["29.9", "29.95", "30", "30.05", "30.1"],
+  "ask_volume": [6665, 7480, 2770, 2556, 1496],
+  "diff_ask_vol": [-18835, 23368, 13381, -2380, 619],
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": true
+}
+
+```
+
+**整股**
+
+In
+
+```
+# 訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "quote_type": "BidAsk"
+  }'
+
+# 開 SSE 收 bid/ask（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/bidask_stk
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "STK",
+#     "exchange": "TSE",
+#     "code": "2890",
+#     "quote_type": "BidAsk"
+#   }'
+
+```
+
+Out
+
+```
+event:bidask_stk
+data:{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:04:14.790669",
+  "bid_price": ["29.8", "29.75", "29.7", "29.65", "29.6"],
+  "bid_volume": [1, 469, 1198, 357, 676],
+  "diff_bid_vol": [-8, 0, 0, 0, 0],
+  "ask_price": ["29.85", "29.9", "29.95", "30", "30.05"],
+  "ask_volume": [105, 75, 175, 731, 307],
+  "diff_ask_vol": [0, 0, 0, 0, 0],
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": false
+}
+
+```
+
+**盤中零股**
+
+In
+
+```
+# 訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "quote_type": "BidAsk",
+    "intraday_odd": true
+  }'
+
+# 開 SSE 收 bid/ask（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/bidask_stk
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "STK",
+#     "exchange": "TSE",
+#     "code": "2890",
+#     "quote_type": "BidAsk",
+#     "intraday_odd": true
+#   }'
+
+```
+
+Out
+
+```
+event:bidask_stk
+data:{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:05:20.045766",
+  "bid_price": ["29.85", "29.8", "29.75", "29.7", "29.65"],
+  "bid_volume": [5506, 39266, 28696, 26258, 9941],
+  "diff_bid_vol": [-704, 31103, 14180, 21365, 7369],
+  "ask_price": ["29.9", "29.95", "30", "30.05", "30.1"],
+  "ask_volume": [1478, 7480, 2770, 2556, 1496],
+  "diff_ask_vol": [27302, -15888, -16605, 4936, 877],
+  "suspend": false,
+  "simtrade": false,
+  "intraday_odd": true
+}
+
+```
+
+### 屬性
+
+BidAsk
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             時間
+datetime (tuple)                         日期與時間
+bid_price (list[Decimal])                五檔委買價
+bid_volume (list[int])                   五檔委買量（整股：張；盤中零股：股）
+diff_bid_vol (list[int])                 五檔委買價增減量（整股：張；盤中零股：股）
+ask_price (list[Decimal])                五檔委賣價
+ask_volume (list[int])                   五檔委賣量（整股：張；盤中零股：股）
+diff_ask_vol (list[int])                 五檔委賣價增減量（整股：張；盤中零股：股）
+suspend (bool)                           暫停交易
+simtrade (bool)                          試撮
+intraday_odd (bool)                      盤中零股 {True, False}
+
+```
+
+## Quote
+
+#### 整股
+
+In
+
+```
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Quote,
+)
+
+# 取消訂閱
+# api.unsubscribe(
+#     api.Contracts.Stocks.TSE.TSE2890,
+#     quote_type=sj.QuoteType.Quote,
+# )
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v2/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+
+QuoteSTKv1(
+    code='2890',
+    date=2026-05-21,
+    time=10:07:52,
+    close=29.8,
+    volume=1,
+    high=30,
+    low=29.7,
+)
+
+```
+
+顯示完整欄位
+
+預設不會展示所有欄位，僅顯示摘要。如需取得完整內容，請參考下方 [Callback](#callback-%E5%83%85-python) 章節自訂 callback 函式。
+
+**整股**
+
+In
+
+```
+shioaji data stream --code 2890 --quote-type quote
+# 按 Ctrl+C 即可停止訂閱，CLI 會自動取消
+
+```
+
+Out
+
+```
+Subscribed to 2890 quote (Ctrl+C to stop)
+{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:08:57.608688",
+  "open": "29.8",
+  "avg_price": "29.82",
+  "close": "29.8",
+  "high": "30",
+  "low": "29.7",
+  "amount": "178800",
+  "amount_sum": "247076900",
+  "volume": 0,
+  "vol_sum": 8284,
+  "tick_type": 1,
+  "diff_type": 3,
+  "diff_price": "0",
+  "diff_rate": 0,
+  "trade_bid_vol_sum": 3279,
+  "trade_ask_vol_sum": 4440,
+  "trade_bid_cnt": 625,
+  "trade_ask_cnt": 279,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": "0",
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": "0",
+  "bid_price": ["29.75", "29.7", "29.65", "29.6", "29.55"],
+  "bid_volume": [501, 1235, 360, 673, 218],
+  "diff_bid_vol": [0, 3, 0, 0, 0],
+  "ask_price": ["29.8", "29.85", "29.9", "29.95", "30"],
+  "ask_volume": [47, 129, 81, 179, 736],
+  "diff_ask_vol": [0, 0, 0, 0, 0],
+  "avail_borrowing": 8896631,
+  "suspend": false,
+  "simtrade": false
+}
+
+```
+
+**整股**
+
+In
+
+```
+# 訂閱
+curl -X POST http://localhost:8080/api/v1/stream/subscribe \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "quote_type": "Quote"
+  }'
+
+# 開 SSE 收 quote（Ctrl+C 結束）
+curl -N http://localhost:8080/api/v1/stream/data/quote_stk
+
+# 取消訂閱
+# curl -X POST http://localhost:8080/api/v1/stream/unsubscribe \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#     "security_type": "STK",
+#     "exchange": "TSE",
+#     "code": "2890",
+#     "quote_type": "Quote"
+#   }'
+
+```
+
+Out
+
+```
+event:quote_stk
+data:{
+  "code": "2890",
+  "date": "2026-05-21",
+  "time": "10:10:04.164422",
+  "open": "29.8",
+  "avg_price": "29.82",
+  "close": "29.8",
+  "high": "30",
+  "low": "29.7",
+  "amount": "149000",
+  "amount_sum": "247941050",
+  "volume": 5,
+  "vol_sum": 8313,
+  "tick_type": 1,
+  "diff_type": 3,
+  "diff_price": "0",
+  "diff_rate": 0,
+  "trade_bid_vol_sum": 3303,
+  "trade_ask_vol_sum": 4445,
+  "trade_bid_cnt": 635,
+  "trade_ask_cnt": 284,
+  "closing_oddlot_shares": 0,
+  "closing_oddlot_close": null,
+  "closing_oddlot_amount": "0",
+  "closing_oddlot_bid_price": null,
+  "closing_oddlot_ask_price": null,
+  "fixed_trade_volume": 0,
+  "fixed_trade_amount": "0",
+  "bid_price": ["29.75", "29.7", "29.65", "29.6", "29.55"],
+  "bid_volume": [522, 1236, 373, 667, 218],
+  "diff_bid_vol": [0, 0, 0, 0, 0],
+  "ask_price": ["29.8", "29.85", "29.9", "29.95", "30"],
+  "ask_volume": [34, 158, 83, 172, 736],
+  "diff_ask_vol": [-5, 0, 0, 0, 0],
+  "avail_borrowing": 8894631,
+  "suspend": false,
+  "simtrade": false
+}
+
+```
+
+### 屬性
+
+Quote
+
+```
+code (str)                               商品代碼
+exchange (Exchange)                      交易所
+date (tuple)                             日期
+time (tuple)                             成交時間
+datetime (tuple)                         日期與時間
+open (Decimal)                           開盤價
+avg_price (Decimal)                      均價
+close (Decimal)                          成交價
+high (Decimal)                           最高價（自開盤）
+low (Decimal)                            最低價（自開盤）
+amount (Decimal)                         單筆成交額 (NTD)
+amount_sum (Decimal)                     總成交額 (NTD)
+volume (int)                             單筆成交量（張）
+vol_sum (int)                            總成交量（張）
+tick_type (int)                          內外盤別{1: 外盤, 2: 內盤, 0: 無法判定}
+diff_type (int)                          漲跌註記{1: 漲停, 2: 漲, 3: 平盤, 4: 跌, 5: 跌停}
+diff_price (Decimal)                     漲跌
+diff_rate (int)                          漲跌幅 (%)
+trade_bid_vol_sum (int)                  買盤成交總量（張）
+trade_ask_vol_sum (int)                  賣盤成交總量（張）
+trade_bid_cnt (int)                      買盤成交筆數
+trade_ask_cnt (int)                      賣盤成交筆數
+closing_oddlot_shares (int)              盤後零股成交股數（股）
+closing_oddlot_close (Decimal)           盤後零股成交價
+closing_oddlot_amount (Decimal)          盤後零股成交額
+closing_oddlot_bid_price (Decimal)       盤後零股最高買價
+closing_oddlot_ask_price (Decimal)       盤後零股最低賣價
+fixed_trade_volume (int)                 定盤成交量（張）
+fixed_trade_amount (Decimal)             定盤成交額
+bid_price (list[Decimal])                五檔委買價
+bid_volume (list[int])                   五檔委買量（張）
+diff_bid_vol (list[int])                 五檔委買價增減量（張）
+ask_price (list[Decimal])                五檔委賣價
+ask_volume (list[int])                   五檔委賣量（張）
+diff_ask_vol (list[int])                 五檔委賣價增減量（張）
+avail_borrowing (int)                    借券可用餘額
+suspend (bool)                           暫停交易
+simtrade (bool)                          試撮
+
+```
+
+## Callback（僅 Python）
+
+預設狀況下我們將即時行情使用 `print` 的方式呈現，僅顯示部分摘要欄位。可根據個人需求修改 callback 函式以取得完整欄位內容，並串接其他應用（行情管理、觸價單等）。請避免在函式內進行運算。
+
+- 盤中零股與一般證券共用 callback 函式。
+- 更進階的 callback 使用可以參見[綁訂報價模式](../../../advanced/quote_binding/)。
+
+### Tick
+
+decorator 方式
+
+```
+from shioaji import TickSTKv1, Exchange
+
+@api.on_tick_stk_v1()
+def quote_callback(exchange: Exchange, tick: TickSTKv1):
+    print(f"exchange={exchange}")
+    print(f"code={tick.code}")
+    print(f"date={tick.date}")
+    print(f"time={tick.time}")
+    print(f"datetime={tick.datetime}")
+    print(f"open={tick.open}")
+    print(f"avg_price={tick.avg_price}")
+    print(f"close={tick.close}")
+    print(f"high={tick.high}")
+    print(f"low={tick.low}")
+    print(f"amount={tick.amount}")
+    print(f"amount_sum={tick.amount_sum}")
+    print(f"volume={tick.volume}")
+    print(f"vol_sum={tick.vol_sum}")
+    print(f"tick_type={tick.tick_type}")
+    print(f"diff_type={tick.diff_type}")
+    print(f"diff_price={tick.diff_price}")
+    print(f"diff_rate={tick.diff_rate}")
+    print(f"trade_bid_vol_sum={tick.trade_bid_vol_sum}")
+    print(f"trade_ask_vol_sum={tick.trade_ask_vol_sum}")
+    print(f"trade_bid_cnt={tick.trade_bid_cnt}")
+    print(f"trade_ask_cnt={tick.trade_ask_cnt}")
+    print(f"closing_oddlot_shares={tick.closing_oddlot_shares}")
+    print(f"closing_oddlot_close={tick.closing_oddlot_close}")
+    print(f"closing_oddlot_amount={tick.closing_oddlot_amount}")
+    print(f"closing_oddlot_bid_price={tick.closing_oddlot_bid_price}")
+    print(f"closing_oddlot_ask_price={tick.closing_oddlot_ask_price}")
+    print(f"fixed_trade_volume={tick.fixed_trade_volume}")
+    print(f"fixed_trade_amount={tick.fixed_trade_amount}")
+    print(f"suspend={tick.suspend}")
+    print(f"simtrade={tick.simtrade}")
+    print(f"intraday_odd={tick.intraday_odd}")
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Tick,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import TickSTKv1, Exchange
+
+def quote_callback(exchange: Exchange, tick: TickSTKv1):
+    print(f"{exchange} {tick}")
+
+api.set_on_tick_stk_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Tick,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: TIC/v1/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TSE
+code=2890
+date=(2026, 5, 21)
+time=(9, 20, 39, 959231)
+datetime=(2026, 5, 21, 9, 20, 39, 959231)
+open=29.8
+avg_price=29.86
+close=29.9
+high=30
+low=29.75
+amount=29900
+amount_sum=110307300
+volume=1
+vol_sum=3693
+tick_type=1
+diff_type=2
+diff_price=0.1
+diff_rate=33
+trade_bid_vol_sum=1803
+trade_ask_vol_sum=1325
+trade_bid_cnt=144
+trade_ask_cnt=64
+closing_oddlot_shares=0
+closing_oddlot_close=None
+closing_oddlot_amount=0
+closing_oddlot_bid_price=None
+closing_oddlot_ask_price=None
+fixed_trade_volume=0
+fixed_trade_amount=0
+suspend=False
+simtrade=False
+intraday_odd=False
+
+```
+
+### BidAsk
+
+decorator 方式
+
+```
+from shioaji import BidAskSTKv1, Exchange
+
+@api.on_bidask_stk_v1()
+def quote_callback(exchange: Exchange, bidask: BidAskSTKv1):
+    print(f"exchange={exchange}")
+    print(f"code={bidask.code}")
+    print(f"date={bidask.date}")
+    print(f"time={bidask.time}")
+    print(f"datetime={bidask.datetime}")
+    print(f"bid_price={bidask.bid_price}")
+    print(f"bid_volume={bidask.bid_volume}")
+    print(f"diff_bid_vol={bidask.diff_bid_vol}")
+    print(f"ask_price={bidask.ask_price}")
+    print(f"ask_volume={bidask.ask_volume}")
+    print(f"diff_ask_vol={bidask.diff_ask_vol}")
+    print(f"suspend={bidask.suspend}")
+    print(f"simtrade={bidask.simtrade}")
+    print(f"intraday_odd={bidask.intraday_odd}")
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import BidAskSTKv1, Exchange
+
+def quote_callback(exchange: Exchange, bidask: BidAskSTKv1):
+    print(f"{exchange} {bidask}")
+
+api.set_on_bidask_stk_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.BidAsk,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v1/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TSE
+code=2890
+date=(2026, 5, 21)
+time=(9, 57, 57, 278770)
+datetime=(2026, 5, 21, 9, 57, 57, 278770)
+bid_price=[Decimal('29.75'), Decimal('29.7'), Decimal('29.65'), Decimal('29.6'), Decimal('29.55')]
+bid_volume=[337, 1423, 374, 644, 203]
+diff_bid_vol=[1, 0, 0, 0, 0]
+ask_price=[Decimal('29.8'), Decimal('29.85'), Decimal('29.9'), Decimal('29.95'), Decimal('30')]
+ask_volume=[37, 92, 70, 163, 731]
+diff_ask_vol=[0, 0, 0, 0, 0]
+suspend=False
+simtrade=False
+intraday_odd=False
+
+```
+
+### Quote
+
+decorator 方式
+
+```
+from shioaji import QuoteSTKv1, Exchange
+
+@api.on_quote_stk_v1()
+def quote_callback(exchange: Exchange, quote: QuoteSTKv1):
+    print(f"exchange={exchange}")
+    print(f"code={quote.code}")
+    print(f"date={quote.date}")
+    print(f"time={quote.time}")
+    print(f"datetime={quote.datetime}")
+    print(f"open={quote.open}")
+    print(f"avg_price={quote.avg_price}")
+    print(f"close={quote.close}")
+    print(f"high={quote.high}")
+    print(f"low={quote.low}")
+    print(f"amount={quote.amount}")
+    print(f"amount_sum={quote.amount_sum}")
+    print(f"volume={quote.volume}")
+    print(f"vol_sum={quote.vol_sum}")
+    print(f"tick_type={quote.tick_type}")
+    print(f"diff_type={quote.diff_type}")
+    print(f"diff_price={quote.diff_price}")
+    print(f"diff_rate={quote.diff_rate}")
+    print(f"trade_bid_vol_sum={quote.trade_bid_vol_sum}")
+    print(f"trade_ask_vol_sum={quote.trade_ask_vol_sum}")
+    print(f"trade_bid_cnt={quote.trade_bid_cnt}")
+    print(f"trade_ask_cnt={quote.trade_ask_cnt}")
+    print(f"closing_oddlot_shares={quote.closing_oddlot_shares}")
+    print(f"closing_oddlot_close={quote.closing_oddlot_close}")
+    print(f"closing_oddlot_amount={quote.closing_oddlot_amount}")
+    print(f"closing_oddlot_bid_price={quote.closing_oddlot_bid_price}")
+    print(f"closing_oddlot_ask_price={quote.closing_oddlot_ask_price}")
+    print(f"fixed_trade_volume={quote.fixed_trade_volume}")
+    print(f"fixed_trade_amount={quote.fixed_trade_amount}")
+    print(f"bid_price={quote.bid_price}")
+    print(f"bid_volume={quote.bid_volume}")
+    print(f"diff_bid_vol={quote.diff_bid_vol}")
+    print(f"ask_price={quote.ask_price}")
+    print(f"ask_volume={quote.ask_volume}")
+    print(f"diff_ask_vol={quote.diff_ask_vol}")
+    print(f"avail_borrowing={quote.avail_borrowing}")
+    print(f"suspend={quote.suspend}")
+    print(f"simtrade={quote.simtrade}")
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Quote,
+)
+
+```
+
+傳統方式
+
+```
+from shioaji import QuoteSTKv1, Exchange
+
+def quote_callback(exchange: Exchange, quote: QuoteSTKv1):
+    print(f"{exchange} {quote}")
+
+api.set_on_quote_stk_v1_callback(quote_callback)
+
+api.subscribe(
+    api.Contracts.Stocks.TSE.TSE2890,
+    quote_type=sj.QuoteType.Quote,
+)
+
+```
+
+Out
+
+```
+Response Code: 200 | Event Code: 16 | Info: QUO/v2/STK/*/TSE/2890 | Event: Subscribe or Unsubscribe ok
+exchange=Exchange.TSE
+code=2890
+date=(2026, 5, 21)
+time=(10, 12, 14, 687147)
+datetime=(2026, 5, 21, 10, 12, 14, 687147)
+open=29.8
+avg_price=29.82
+close=29.8
+high=30
+low=29.7
+amount=29800
+amount_sum=249103250
+volume=0
+vol_sum=8352
+tick_type=1
+diff_type=3
+diff_price=0
+diff_rate=0
+trade_bid_vol_sum=3342
+trade_ask_vol_sum=4445
+trade_bid_cnt=653
+trade_ask_cnt=284
+closing_oddlot_shares=0
+closing_oddlot_close=None
+closing_oddlot_amount=0
+closing_oddlot_bid_price=None
+closing_oddlot_ask_price=None
+fixed_trade_volume=0
+fixed_trade_amount=0
+bid_price=[Decimal('29.75'), Decimal('29.7'), Decimal('29.65'), Decimal('29.6'), Decimal('29.55')]
+bid_volume=[570, 1242, 677, 691, 222]
+diff_bid_vol=[0, 0, 0, -1, 0]
+ask_price=[Decimal('29.8'), Decimal('29.85'), Decimal('29.9'), Decimal('29.95'), Decimal('30')]
+ask_volume=[9, 158, 85, 179, 739]
+diff_ask_vol=[0, 0, 0, 0, 0]
+avail_borrowing=8894631
+suspend=False
+simtrade=False
+
+```
+
+提醒
+
+下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+
+組合單（Combo Order）將多支期貨／選擇權合約綁定為單一委託送出，提供類型包括**價格價差**、**時間價差**、**跨式**、**勒式**、**轉換**以及**逆轉**，組合規則詳見期交所[文件](https://www.taifex.com.tw/cht/5/margingReqIndexOpt)。
+
+## 下單
+
+place_comboorder
+
+```
+api.place_comboorder?
+
+Signature:
+    api.place_comboorder(
+        combo_contract: sj.ComboContract,
+        order: Union[sj.ComboOrder, sj.FuturesOrder],
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.ComboTrade], None]] = None,
+    ) -> sj.ComboTrade
+
+```
+
+Parameters
+
+```
+combo_contract: 組合商品檔，含多個 ComboBase legs
+order:          組合委託單（ComboOrder 或 FuturesOrder）
+timeout:        逾時毫秒
+cb:             選填，callback 函式
+
+```
+
+sj.ComboOrder
+
+```
+action (Action):                買賣別 {Buy: 買, Sell: 賣}
+price (float or int):           價格
+quantity (int):                 數量
+price_type (FuturesPriceType):  價格別 {LMT: 限價, MKT: 市價, MKP: 範圍市價}
+order_type (OrderType):         委託條件 {ROD, IOC, FOK}
+octype (FuturesOCType):         倉別 {Auto: 自動, New: 新倉, Cover: 平倉, DayTrade: 當沖}
+combo_type (ComboType):         選填，組合類型；省略時由 legs 自動推導
+account (Account):              下單帳號
+
+```
+
+sj.ComboBase
+
+```
+action (Action):              買賣別 {Buy: 買, Sell: 賣}
+security_type (SecurityType): 商品類型 {FUT, OPT}
+exchange (Exchange):          交易所
+code (str):                   商品代碼
+
+```
+
+place_comboorder
+
+```
+POST /api/v1/order/place_comboorder
+Content-Type: application/json
+
+{
+  "combo_contract": {
+    "legs": [
+      {
+        "action": <Action>,
+        "security_type": <SecurityType>,
+        "exchange": <Exchange>,
+        "code": <string>,
+        "category": <string>,
+        "delivery_month": <string>,
+        "strike_price": <number>,
+        "option_right": <string>
+      }
+    ]
+  },
+  "order": {
+    "action": <Action>,
+    "price": <number>,
+    "quantity": <integer>,
+    "price_type": <FuturesPriceType>,
+    "order_type": <OrderType>,
+    "octype": <FuturesOCType>,
+    "account": { "broker_id": <string>, "account_id": <string> }
+  }
+}
+
+```
+
+Parameters
+
+```
+combo_contract.legs[].action:         買賣別 {Buy, Sell}
+combo_contract.legs[].security_type:  商品類型 {FUT, OPT}
+combo_contract.legs[].exchange:       交易所
+combo_contract.legs[].code:           商品代碼
+combo_contract.legs[].category:       商品類別
+combo_contract.legs[].delivery_month: 到期月份 YYYYMM
+combo_contract.legs[].strike_price:   履約價（期貨可填 null）
+combo_contract.legs[].option_right:   買賣權別 {C, P}（期貨可填 null）
+order.action:                         買賣別 {Buy, Sell}
+order.price:                          價格
+order.quantity:                       數量
+order.price_type:                     價格別 {LMT, MKT, MKP}
+order.order_type:                     委託條件 {ROD, IOC, FOK}
+order.octype:                         倉別 {Auto, New, Cover, DayTrade}
+order.account:                        下單帳號（省略則使用預設期貨帳號）
+
+```
+
+### 範例
+
+Order
+
+```
+# 商品檔（賣出跨式：同到期、同履約價，賣 Call + 賣 Put）
+call = api.Contracts.Options.TXO.get("TXO20260527000C")
+put = api.Contracts.Options.TXO.get("TXO20260527000P")
+combo_contract = sj.ComboContract(
+    legs=[
+        sj.ComboBase.from_contract(call, action=sj.Action.Sell),
+        sj.ComboBase.from_contract(put, action=sj.Action.Sell),
+    ]
+)
+# 委託內容
+order = sj.ComboOrder(
+    action=sj.Action.Sell,
+    price=1,
+    quantity=1,
+    price_type=sj.FuturesPriceType.LMT,
+    order_type=sj.OrderType.IOC,
+    octype=sj.FuturesOCType.New,
+    account=api.futopt_account,
+)
+
+```
+
+In
+
+```
+# 下單
+trade = api.place_comboorder(combo_contract, order)
+trade
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/place_comboorder \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "combo_contract": {
+      "legs": [
+        {
+          "action": "Sell",
+          "security_type": "OPT",
+          "exchange": "TAIFEX",
+          "code": "TXO20260527000C",
+          "symbol": "TXO20260527000C",
+          "category": "TXO",
+          "delivery_month": "202605",
+          "strike_price": 27000,
+          "option_right": "C"
+        },
+        {
+          "action": "Sell",
+          "security_type": "OPT",
+          "exchange": "TAIFEX",
+          "code": "TXO20260527000P",
+          "symbol": "TXO20260527000P",
+          "category": "TXO",
+          "delivery_month": "202605",
+          "strike_price": 27000,
+          "option_right": "P"
+        }
+      ]
+    },
+    "order": {
+      "action": "Sell",
+      "price": 1,
+      "quantity": 1,
+      "price_type": "LMT",
+      "order_type": "IOC",
+      "octype": "New",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+## 刪單
+
+`trade` 為要刪的單，可從[查詢狀態](#_4)取得。
+
+cancel_comboorder
+
+```
+api.cancel_comboorder?
+
+Signature:
+    api.cancel_comboorder(
+        combo_trade: sj.ComboTrade,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.ComboTrade], None]] = None,
+    ) -> sj.ComboTrade
+
+```
+
+Parameters
+
+```
+combo_trade: 欲刪除的組合單物件（從 list_combotrades / update_combostatus 取得）
+timeout:     逾時毫秒
+cb:          選填，callback 函式
+
+```
+
+cancel_comboorder
+
+```
+POST /api/v1/order/cancel_comboorder
+Content-Type: application/json
+
+{
+  "trade_id": <string>
+}
+
+```
+
+Parameters
+
+```
+trade_id: 組合單 ID（取自 place 回傳的 status.id）
+
+```
+
+### 範例
+
+In
+
+```
+api.cancel_comboorder(trade)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/cancel_comboorder \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID"
+  }'
+
+```
+
+## 查詢狀態
+
+如同 `list_trades` 及 `update_status` 的概念，取得組合單狀態前，必須先呼叫 `update_combostatus` 更新；HTTP `/order/combotrades` 端點則一次完成「更新 + 取得」。
+
+update_combostatus / list_combotrades
+
+```
+api.update_combostatus?
+
+Signature:
+    api.update_combostatus(
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[List[sj.ComboTrade]], None]] = None,
+    ) -> List[sj.ComboTrade]
+
+api.list_combotrades?
+
+Signature:
+    api.list_combotrades() -> List[sj.ComboTrade]
+
+```
+
+Parameters
+
+```
+update_combostatus
+    account: 期貨帳號；省略則更新名下所有期貨帳號
+    timeout: 逾時毫秒
+    cb:      選填，callback 函式
+
+list_combotrades
+    （無參數，從本地快取回傳已知組合單）
+
+```
+
+combotrades
+
+```
+POST /api/v1/order/combotrades
+Content-Type: application/json
+
+{
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+```
+
+Parameters
+
+```
+account: 期貨帳號
+
+```
+
+### 範例
+
+In
+
+```
+api.update_combostatus(api.futopt_account)
+api.list_combotrades()
+
+```
+
+Out
+
+```
+[
+    ComboTrade(
+        contract=ComboContract(
+            legs=[
+                ComboBase(
+                    action=<Action.Sell: 'Sell'>,
+                    security_type=<SecurityType.Option: 'OPT'>,
+                    exchange=<Exchange.TAIFEX: 'TAIFEX'>,
+                    code='TXO20260527000C',
+                    symbol='TXO20260527000C',
+                    category='TXO',
+                    delivery_month='202605',
+                    strike_price=27000.0,
+                    option_right=<OptionRight.Call: 'C'>
+                ),
+                ComboBase(
+                    action=<Action.Sell: 'Sell'>,
+                    security_type=<SecurityType.Option: 'OPT'>,
+                    exchange=<Exchange.TAIFEX: 'TAIFEX'>,
+                    code='TXO20260527000P',
+                    symbol='TXO20260527000P',
+                    category='TXO',
+                    delivery_month='202605',
+                    strike_price=27000.0,
+                    option_right=<OptionRight.Put: 'P'>
+                )
+            ]
+        ),
+        order=Order(
+            id='46989de8',
+            action=<Action.Sell: 'Sell'>,
+            price=1.0,
+            quantity=1,
+            seqno='743595',
+            ordno='000000',
+            order_type=<OrderType.IOC: 'IOC'>,
+            price_type=<PriceType.LMT: 'LMT'>,
+            account=FutureAccount(
+                person_id='YOUR_PERSON_ID',
+                broker_id='YOUR_BROKER_ID',
+                account_id='YOUR_ACCOUNT_ID',
+                signed=true,
+                username=''
+            ),
+            octype=<FuturesOCType.New: 'New'>
+        ),
+        status=ComboStatus(
+            id='46989de8',
+            status=<OrderStatus.Submitted: 'Submitted'>,
+            status_code='0000',
+            order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            modified_time=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            modified_price=1.0,
+            order_quantity=1,
+            deals={}
+        )
+    )
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/combotrades \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+[{"contract":{"legs":[{"action":"Sell","security_type":"OPT","exchange":"TAIFEX","code":"TXO20260527000C","symbol":"TXO20260527000C","category":"TXO","delivery_month":"202605","strike_price":27000.0,"option_right":"C"},{"action":"Sell","security_type":"OPT","exchange":"TAIFEX","code":"TXO20260527000P","symbol":"TXO20260527000P","category":"TXO","delivery_month":"202605","strike_price":27000.0,"option_right":"P"}]},"order":{"id":"46989de8","action":"Sell","price":1.0,"quantity":1,"seqno":"743595","ordno":"000000","order_type":"IOC","price_type":"LMT","account":{"account_type":"F","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""},"octype":"New"},"status":{"id":"46989de8","status":"Submitted","status_code":"0000","order_datetime":"2026-05-20T11:24:30+08:00","modified_time":"2026-05-20T11:24:30+08:00","modified_price":1.0,"order_quantity":1,"deals":{}}}]
+
+```
+
+提醒
+
+下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+
+### 下單
+
+下單時必須提供商品資訊`contract`及下單資訊`order`。
+
+place_order
+
+```
+api.place_order?
+
+Signature:
+    api.place_order(
+        contract: sj.Future,
+        order: sj.FuturesOrder,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    placing order
+
+```
+
+Parameters
+
+```
+contract: 商品檔（由 api.Contracts.Futures.* 取得）
+order:    期貨委託單物件
+timeout:  逾時毫秒
+cb:       選填，callback 函式
+
+```
+
+sj.FuturesOrder
+
+```
+action (Action):                買賣別 {Buy: 買, Sell: 賣}
+price (float or int):           價格
+quantity (int):                 數量
+price_type (FuturesPriceType):  價格別 {LMT: 限價, MKT: 市價, MKP: 範圍市價}
+order_type (OrderType):         委託條件 {ROD, IOC, FOK}
+octype (FuturesOCType):         倉別 {Auto: 自動, New: 新倉, Cover: 平倉, DayTrade: 當沖}
+account (Account):              下單帳號
+
+```
+
+place_order
+
+```
+POST /api/v1/order/place_order
+Content-Type: application/json
+
+{
+  "contract": { "security_type": "FUT", "exchange": "TAIFEX", "code": <string> },
+  "futures_order": {
+    "action": <Action>,
+    "price": <number>,
+    "quantity": <integer>,
+    "price_type": <FuturesPriceType>,
+    "order_type": <OrderType>,
+    "octype": <FuturesOCType>,
+    "account": { "broker_id": <string>, "account_id": <string> }
+  }
+}
+
+```
+
+Parameters
+
+```
+contract.security_type:   商品類型 {FUT, OPT}
+contract.code:            商品代碼
+futures_order.action:     買賣別 {Buy, Sell}
+futures_order.price:      價格
+futures_order.quantity:   數量
+futures_order.price_type: 價格別 {LMT, MKT, MKP}
+futures_order.order_type: 委託條件 {ROD, IOC, FOK}
+futures_order.octype:     倉別 {Auto, New, Cover, DayTrade}
+futures_order.account:    下單帳號（省略則使用預設期貨帳號）
+
+```
+
+#### 範例：下單
+
+Order
+
+```
+# 商品檔
+contract = api.Contracts.Futures.TMF.TMFR1
+# 委託內容
+order = sj.FuturesOrder(
+    action=sj.Action.Buy,
+    price=36216,
+    quantity=2,
+    price_type=sj.FuturesPriceType.LMT,
+    order_type=sj.OrderType.ROD,
+    octype=sj.FuturesOCType.Auto,
+    account=api.futopt_account,
+)
+
+```
+
+In
+
+```
+# 下單
+trade = api.place_order(contract, order)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6',
+        target_code='TMFE6'
+    ),
+    order=Order(
+        id='e0ae2459',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=2,
+        seqno='242472',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username='YOUR_USERNAME'
+        ),
+        octype=<FuturesOCType.Auto: 'Auto'>
+    ),
+    status=OrderStatus(
+        id='e0ae2459',
+        status=<OrderStatus.PendingSubmit: 'PendingSubmit'>,
+        status_code='    ',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+    )
+)
+
+```
+
+下單完成後會收到交易所傳回的下單回報訊息，詳情內容可詳見[下單回報](../order_deal_event/stocks/)。
+
+`place_order` 回傳的 `trade` 狀態若為 `PendingSubmit`，可執行 `update_status` 主動更新，詳見[委託狀態](../UpdateStatus/)。
+
+In
+
+```
+api.update_status(api.futopt_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6'
+    ),
+    order=Order(
+        id='e0ae2459',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=2,
+        seqno='242472',
+        ordno='vE0Dr',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        octype=<FuturesOCType.NewPosition: 'NewPosition'>
+    ),
+    status=OrderStatus(
+        id='e0ae2459',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='0000',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='Z',
+        modified_time=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=36216,
+        order_quantity=2
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "FUT", "exchange": "TAIFEX", "code": "TMFR1"},
+    "futures_order": {
+      "action": "Buy",
+      "price": 36216,
+      "quantity": 2,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "octype": "Auto",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TMFE6",
+    "target_code": ""
+  },
+  "order": {
+    "id": "bf2ca5b0",
+    "seqno": "243121",
+    "ordno": "",
+    "action": "Buy",
+    "price": 36216.0,
+    "quantity": 2,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "F",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": "YOUR_USERNAME"
+    },
+    "ca": "YOUR_CA_BASE64",
+    "octype": "Auto"
+  },
+  "status": {
+    "id": "bf2ca5b0",
+    "status": "PendingSubmit",
+    "status_code": "    ",
+    "web_id": "",
+    "order_ts": 1779187550.0,
+    "msg": "",
+    "modified_ts": 0.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+下單完成後會收到交易所傳回的下單回報訊息，詳情內容可詳見[下單回報](../order_deal_event/stocks/)。
+
+`POST /api/v1/order/place_order` 回傳的 `status` 若為 `PendingSubmit`，可呼叫 `POST /api/v1/order/trades` 主動更新，詳見[委託狀態](../UpdateStatus/)。
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/trades \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "broker_id": "YOUR_BROKER_ID",
+    "account_id": "YOUR_ACCOUNT_ID"
+  }'
+
+```
+
+Out
+
+```
+[
+  {
+    "contract": {
+      "security_type": "FUT",
+      "exchange": "TAIFEX",
+      "code": "TMFE6"
+    },
+    "order": {
+      "id": "bf2ca5b0",
+      "seqno": "243121",
+      "ordno": "vE0FK",
+      "action": "Buy",
+      "price": 36216.0,
+      "quantity": 2,
+      "order_type": "ROD",
+      "price_type": "LMT",
+      "custom_field": "",
+      "account": {
+        "account_type": "F",
+        "person_id": "YOUR_PERSON_ID",
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID",
+        "signed": true,
+        "username": ""
+      },
+      "ca": "YOUR_CA_BASE64",
+      "octype": "New"
+    },
+    "status": {
+      "id": "bf2ca5b0",
+      "status": "Submitted",
+      "status_code": "0000",
+      "web_id": "Z",
+      "order_ts": 1779187550.0,
+      "msg": "",
+      "modified_ts": 1779187550.0,
+      "modified_price": 36216.0,
+      "order_quantity": 2,
+      "deal_quantity": 0,
+      "cancel_quantity": 0,
+      "deals": []
+    }
+  }
+]
+
+```
+
+委託單狀態
+
+- `PendingSubmit`: 傳送中
+- `PreSubmitted`: 預約單
+- `Submitted`: 傳送成功
+- `Failed`: 失敗
+- `Cancelled`: 已刪除
+- `Filled`: 完全成交
+- `PartFilled`: 部分成交
+
+### 改單
+
+改單時必須提供原 `trade` 物件。提供改價與改量，兩種改單方式。其中，改量只能減量。
+
+update_order
+
+```
+api.update_order?
+
+Signature:
+    api.update_order(
+        trade: sj.Trade,
+        price: Optional[float] = None,
+        qty: Optional[int] = None,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    update the order price or qty
+
+```
+
+Parameters
+
+```
+trade:    委託單物件
+price:    新價格（改價時帶）
+qty:      新數量（改量時帶，只能減少）
+timeout:  逾時毫秒
+cb:       選填，callback 函式
+
+```
+
+update_price / update_qty
+
+```
+POST /api/v1/order/update_price
+Content-Type: application/json
+
+{
+  "trade_id": <string>,
+  "price": <number>
+}
+
+POST /api/v1/order/update_qty
+Content-Type: application/json
+
+{
+  "trade_id": <string>,
+  "quantity": <integer>
+}
+
+```
+
+Parameters
+
+```
+trade_id: 委託單 ID（取自 place 回傳的 status.id）
+price:    新價格
+quantity: 新數量（只能減少）
+
+```
+
+注意
+
+執行改單前，需先呼叫 `update_status` 取得委託單編號 (`ordno`)。
+
+#### 範例：改價
+
+In
+
+```
+api.update_order(trade=trade, price=36220)
+api.update_status(api.futopt_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6'
+    ),
+    order=Order(
+        id='259e3b09',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=1,
+        seqno='242656',
+        ordno='vE0E5',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        octype=<FuturesOCType.NewPosition: 'NewPosition'>
+    ),
+    status=OrderStatus(
+        id='259e3b09',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='0000',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 13, 36, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='Z',
+        modified_time=datetime.datetime(2026, 5, 19, 18, 13, 42, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=36220,
+        order_quantity=1
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_price \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID",
+    "price": 36220
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TMFE6"
+  },
+  "order": {
+    "id": "5dbaf55e",
+    "seqno": "243390",
+    "ordno": "vE0Fz",
+    "action": "Buy",
+    "price": 36220.0,
+    "quantity": 1,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "F",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "octype": "New"
+  },
+  "status": {
+    "id": "5dbaf55e",
+    "status": "Submitted",
+    "status_code": "0000",
+    "web_id": "Z",
+    "order_ts": 1779188357.0,
+    "msg": "",
+    "modified_ts": 1779188357.0,
+    "modified_price": 36216.0,
+    "order_quantity": 1,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+#### 範例：改量(減量)
+
+注意
+
+`update_order` 只能用來**減少**原委託單的委託數量。
+
+In
+
+```
+api.update_order(trade=trade, qty=1)
+api.update_status(api.futopt_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6'
+    ),
+    order=Order(
+        id='e0ae2459',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=2,
+        seqno='242472',
+        ordno='vE0Dr',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        octype=<FuturesOCType.NewPosition: 'NewPosition'>
+    ),
+    status=OrderStatus(
+        id='e0ae2459',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='0000',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='Z',
+        modified_time=datetime.datetime(2026, 5, 19, 18, 3, 12, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=36216,
+        order_quantity=1,
+        cancel_quantity=1
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_qty \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID",
+    "quantity": 1
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TMFE6"
+  },
+  "order": {
+    "id": "bf2ca5b0",
+    "seqno": "243121",
+    "ordno": "vE0FK",
+    "action": "Buy",
+    "price": 36216.0,
+    "quantity": 1,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "F",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "octype": "New"
+  },
+  "status": {
+    "id": "bf2ca5b0",
+    "status": "Submitted",
+    "status_code": "0000",
+    "web_id": "Z",
+    "order_ts": 1779187550.0,
+    "msg": "",
+    "modified_ts": 1779187550.0,
+    "modified_price": 36216.0,
+    "order_quantity": 1,
+    "cancel_quantity": 1,
+    "deal_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+### 刪單
+
+刪單時必須提供原 `trade` 物件。
+
+cancel_order
+
+```
+api.cancel_order?
+
+Signature:
+    api.cancel_order(
+        trade: sj.Trade,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    cancel order
+
+```
+
+Parameters
+
+```
+trade:   委託單物件
+timeout: 逾時毫秒
+cb:      選填，callback 函式
+
+```
+
+cancel_order
+
+```
+POST /api/v1/order/cancel_order
+Content-Type: application/json
+
+{
+  "trade_id": <string>
+}
+
+```
+
+Parameters
+
+```
+trade_id: 委託單 ID（取自 place 回傳的 status.id）
+
+```
+
+注意
+
+執行刪單前，需先呼叫 `update_status` 取得委託單編號 (`ordno`)。
+
+#### 範例：刪單
+
+In
+
+```
+api.cancel_order(trade)
+api.update_status(api.futopt_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6'
+    ),
+    order=Order(
+        id='e0ae2459',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=2,
+        seqno='242472',
+        ordno='vE0Dr',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        octype=<FuturesOCType.NewPosition: 'NewPosition'>
+    ),
+    status=OrderStatus(
+        id='e0ae2459',
+        status=<OrderStatus.Cancelled: 'Cancelled'>,
+        status_code='0000',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='Z',
+        modified_time=datetime.datetime(2026, 5, 19, 18, 3, 16, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=36216,
+        cancel_quantity=2
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/cancel_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID"
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "FUT",
+    "exchange": "TAIFEX",
+    "code": "TMFE6"
+  },
+  "order": {
+    "id": "bf2ca5b0",
+    "seqno": "243121",
+    "ordno": "vE0FK",
+    "action": "Buy",
+    "price": 36216.0,
+    "quantity": 2,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "F",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "octype": "New"
+  },
+  "status": {
+    "id": "bf2ca5b0",
+    "status": "Cancelled",
+    "status_code": "0000",
+    "web_id": "Z",
+    "order_ts": 1779187550.0,
+    "msg": "",
+    "modified_ts": 1779187550.0,
+    "modified_price": 36216.0,
+    "order_quantity": 0,
+    "cancel_quantity": 2,
+    "deal_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+### 成交
+
+委託單成交後，可呼叫 `update_status` 看到 `status` 轉為 `Filled`，`deals` 欄位填入成交明細。
+
+In
+
+```
+api.update_status(api.futopt_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='FUT',
+        exchange='TAIFEX',
+        code='TMFE6'
+    ),
+    order=Order(
+        id='bf2ca5b0',
+        action=<Action.Buy: 'Buy'>,
+        price=36216,
+        quantity=1,
+        seqno='243121',
+        ordno='vE0FK',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=FutureAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        octype=<FuturesOCType.NewPosition: 'NewPosition'>
+    ),
+    status=OrderStatus(
+        id='bf2ca5b0',
+        status=<OrderStatus.Filled: 'Filled'>,
+        status_code='0000',
+        order_datetime=datetime.datetime(2026, 5, 19, 18, 5, 50, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='Z',
+        modified_time=datetime.datetime(2026, 5, 19, 18, 5, 50, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=36216,
+        order_quantity=1,
+        deal_quantity=1,
+        deals=[
+            Deal(seq='000001', price=36216, quantity=1, ts=1779187550.0)
+        ]
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/trades \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "broker_id": "YOUR_BROKER_ID",
+    "account_id": "YOUR_ACCOUNT_ID"
+  }'
+
+```
+
+Out
+
+```
+[
+  {
+    "contract": {
+      "security_type": "FUT",
+      "exchange": "TAIFEX",
+      "code": "TMFE6"
+    },
+    "order": {
+      "id": "bf2ca5b0",
+      "seqno": "243121",
+      "ordno": "vE0FK",
+      "action": "Buy",
+      "price": 36216.0,
+      "quantity": 1,
+      "order_type": "ROD",
+      "price_type": "LMT",
+      "custom_field": "",
+      "account": {
+        "account_type": "F",
+        "person_id": "YOUR_PERSON_ID",
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID",
+        "signed": true,
+        "username": ""
+      },
+      "ca": "YOUR_CA_BASE64",
+      "octype": "New"
+    },
+    "status": {
+      "id": "bf2ca5b0",
+      "status": "Filled",
+      "status_code": "0000",
+      "web_id": "Z",
+      "order_ts": 1779187550.0,
+      "msg": "",
+      "modified_ts": 1779187550.0,
+      "modified_price": 36216.0,
+      "order_quantity": 1,
+      "deal_quantity": 1,
+      "cancel_quantity": 0,
+      "deals": [
+        {
+          "seq": "000001",
+          "price": 36216.0,
+          "quantity": 1,
+          "ts": 1779187550.0
+        }
+      ]
+    }
+  }
+]
+
+```
+
+## 範例
+
+[期權下單範例 ( jupyter)](https://nbviewer.jupyter.org/github/Sinotrade/Sinotrade.github.io/blob/master/tutorial/future_and_option.ipynb)
+
+### 買賣別
+
+買
+
+```
+order = api.Order(
+    action=sj.constant.Action.Buy,
+    price=14400,
+    quantity=2,
+    price_type=sj.constant.FuturesPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD, 
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+
+```
+
+賣
+
+```
+order = api.Order(
+    action=sj.constant.Action.Sell,
+    price=14400,
+    quantity=2,
+    price_type=sj.constant.FuturesPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD, 
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+
+```
+
+### ROD + LMT
+
+ROD + LMT
+
+```
+order = api.Order(
+    action=sj.constant.Action.Sell,
+    price=14400,
+    quantity=2,
+    price_type=sj.constant.FuturesPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD, 
+    octype=sj.constant.FuturesOCType.Auto,
+    account=api.futopt_account
+)
+
+```
+
+[零股下單範例 ( jupyter)](https://nbviewer.jupyter.org/github/Sinotrade/Sinotrade.github.io/blob/master/tutorial/stock_intraday_odd.ipynb)
+
+提醒
+
+下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+
+### 下單
+
+零股下單與[證券下單](../Stock/)相同，差別在 `order_lot` 需設為 `IntradayOdd`。
+
+Order
+
+```
+# 商品檔
+contract = api.Contracts.Stocks.TSE.TSE2890
+# 委託內容
+order = sj.StockOrder(
+    action=sj.Action.Buy,
+    price=27.1,
+    quantity=10,
+    price_type=sj.StockPriceType.LMT,
+    order_lot=sj.StockOrderLot.IntradayOdd,
+    order_type=sj.OrderType.ROD,
+    order_cond=sj.StockOrderCond.Cash,
+    account=api.stock_account,
+)
+
+```
+
+In
+
+```
+# 下單
+trade = api.place_order(contract, order)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890',
+        target_code=''
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=10,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username='YOUR_USERNAME'
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.IntradayOdd: 'IntradayOdd'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.PendingSubmit: 'PendingSubmit'>,
+        status_code='0',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        msg='委託成功'
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "STK", "exchange": "TSE", "code": "2890"},
+    "stock_order": {
+      "action": "Buy",
+      "price": 27.1,
+      "quantity": 10,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "order_lot": "IntradayOdd",
+      "order_cond": "Cash",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "target_code": ""
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 10,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": "YOUR_USERNAME"
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "IntradayOdd"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "PendingSubmit",
+    "status_code": "0",
+    "web_id": "",
+    "order_ts": 1779248594.0,
+    "msg": "委託成功",
+    "modified_ts": 0.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+### 改單
+
+零股**不能進行改價**，只能減量。改單詳細用法請參考[證券下單](../Stock/)。
+
+In
+
+```
+api.update_order(trade=trade, qty=2)
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=10,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.IntradayOdd: 'IntradayOdd'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 24, 35, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        order_quantity=2,
+        cancel_quantity=8
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_qty \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID",
+    "quantity": 2
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890"
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 2,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "IntradayOdd"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "Submitted",
+    "status_code": "00",
+    "web_id": "137",
+    "order_ts": 1779248594.0,
+    "msg": "",
+    "modified_ts": 1779248627.0,
+    "modified_price": 0.0,
+    "order_quantity": 2,
+    "deal_quantity": 0,
+    "cancel_quantity": 8,
+    "deals": []
+  }
+}
+
+```
+
+### 刪單
+
+刪單用法請參考[證券下單](../Stock/)。
+
+In
+
+```
+api.cancel_order(trade)
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=10,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.IntradayOdd: 'IntradayOdd'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.Cancelled: 'Cancelled'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 24, 41, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        cancel_quantity=10
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/cancel_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID"
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890"
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 10,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "IntradayOdd"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "Cancelled",
+    "status_code": "00",
+    "web_id": "137",
+    "order_ts": 1779248594.0,
+    "msg": "",
+    "modified_ts": 1779248627.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 10,
+    "deals": []
+  }
+}
+
+```
+
+當現貨觸發[注意股、警示股、處置股、管理股](../../market_data/disposition_attention/)等交易異常條件時，需先預收券款。
+
+提醒
+
+- 下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+- 服務時間為交易日 8:00–14:30。
+
+## 預收款項
+
+reserve_earmarking / earmarking_detail
+
+```
+api.reserve_earmarking?
+
+Signature:
+    api.reserve_earmarking(
+        contract: sj.Stock,
+        share: int,
+        price: float,
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.EarmarkingOrderResp], None]] = None,
+    ) -> sj.EarmarkingOrderResp
+
+api.earmarking_detail?
+
+Signature:
+    api.earmarking_detail(
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.EarmarkStocksDetail], None]] = None,
+    ) -> sj.EarmarkStocksDetail
+
+```
+
+Parameters
+
+```
+reserve_earmarking
+    contract: 商品檔（由 api.Contracts.Stocks.* 取得）
+    share:    預收股數
+    price:    預收價格
+    account:  證券帳號
+    timeout:  逾時毫秒
+    cb:       選填，callback 函式
+
+earmarking_detail
+    account:  證券帳號
+    timeout:  逾時毫秒
+    cb:       選填，callback 函式
+
+```
+
+reserve_earmarking / earmarking_detail
+
+```
+POST /api/v1/order/reserve_earmarking
+Content-Type: application/json
+
+{
+  "contract": { "security_type": "STK", "exchange": <Exchange>, "code": <string> },
+  "share": <integer>,
+  "price": <number>,
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+POST /api/v1/order/earmarking_detail
+Content-Type: application/json
+
+{
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+```
+
+Parameters
+
+```
+reserve_earmarking
+    contract.exchange: 交易所 {TSE, OTC}
+    contract.code:     商品代碼
+    share:             預收股數
+    price:             預收價格
+    account:           證券帳號
+
+earmarking_detail
+    account:           證券帳號
+
+```
+
+### 申請預收款項
+
+Order
+
+```
+# 商品檔
+contract = api.Contracts.Stocks.TSE.TSE1217
+# 預收款項內容
+share = 1000
+price = 9
+
+```
+
+In
+
+```
+# 申請預收款項
+resp = api.reserve_earmarking(contract, share, price, account=api.stock_account)
+resp
+
+```
+
+Out
+
+```
+EarmarkingOrderResp(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='1217',
+        target_code=''
+    ),
+    account=StockAccount(
+        person_id='YOUR_PERSON_ID',
+        broker_id='YOUR_BROKER_ID',
+        account_id='YOUR_ACCOUNT_ID',
+        signed=true,
+        username=''
+    ),
+    share=1000,
+    price=9,
+    status=true,
+    info='OK'
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/reserve_earmarking \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {
+      "security_type": "STK",
+      "exchange": "TSE",
+      "code": "1217"
+    },
+    "share": 1000,
+    "price": 9,
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+{"contract":{"security_type":"STK","exchange":"TSE","code":"1217","target_code":""},"account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""},"share":1000,"price":9.0,"status":true,"info":"OK"}
+
+```
+
+### 查詢預收款項
+
+In
+
+```
+resp = api.earmarking_detail(account=api.stock_account)
+resp
+
+```
+
+Out
+
+```
+EarmarkStocksDetail(
+    stocks=[
+        EarmarkStockDetail(
+            contract=Contract(
+                security_type='STK',
+                exchange='TSE',
+                code='1217',
+                target_code=''
+            ),
+            share=1000,
+            price=9,
+            amount=9020,
+            order_datetime='2026-05-20T15:16:28+08:00',
+            status=true,
+            info='成功'
+        )
+    ],
+    account=StockAccount(
+        person_id='YOUR_PERSON_ID',
+        broker_id='YOUR_BROKER_ID',
+        account_id='YOUR_ACCOUNT_ID',
+        signed=true,
+        username=''
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/earmarking_detail \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+{"stocks":[{"contract":{"security_type":"STK","exchange":"TSE","code":"1217","target_code":""},"share":1000,"price":9.0,"amount":9020,"order_datetime":"2026-05-20T15:16:28+08:00","status":true,"info":"成功"}],"account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""}}
+
+```
+
+## 預收股票
+
+reserve_stock / stock_reserve_summary / stock_reserve_detail
+
+```
+api.reserve_stock?
+
+Signature:
+    api.reserve_stock(
+        contract: sj.Stock,
+        share: int,
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.ReserveOrderResp], None]] = None,
+    ) -> sj.ReserveOrderResp
+
+api.stock_reserve_summary?
+
+Signature:
+    api.stock_reserve_summary(
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.ReserveStocksSummary], None]] = None,
+    ) -> sj.ReserveStocksSummary
+
+api.stock_reserve_detail?
+
+Signature:
+    api.stock_reserve_detail(
+        account: Optional[sj.Account] = None,
+        timeout: Optional[int] = 5000,
+        cb: Optional[Callable[[sj.ReserveStocksDetail], None]] = None,
+    ) -> sj.ReserveStocksDetail
+
+```
+
+Parameters
+
+```
+reserve_stock
+    contract: 商品檔（由 api.Contracts.Stocks.* 取得）
+    share:    預收股數
+    account:  證券帳號
+    timeout:  逾時毫秒
+    cb:       選填，callback 函式
+
+stock_reserve_summary
+    account:  證券帳號
+    timeout:  逾時毫秒
+    cb:       選填，callback 函式
+
+stock_reserve_detail
+    account:  證券帳號
+    timeout:  逾時毫秒
+    cb:       選填，callback 函式
+
+```
+
+reserve_stock / stock_reserve_summary / stock_reserve_detail
+
+```
+POST /api/v1/order/reserve_stock
+Content-Type: application/json
+
+{
+  "contract": { "security_type": "STK", "exchange": <Exchange>, "code": <string> },
+  "share": <integer>,
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+POST /api/v1/order/stock_reserve_summary
+Content-Type: application/json
+
+{
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+POST /api/v1/order/stock_reserve_detail
+Content-Type: application/json
+
+{
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+```
+
+Parameters
+
+```
+reserve_stock
+    contract.exchange: 交易所 {TSE, OTC}
+    contract.code:     商品代碼
+    share:             預收股數
+    account:           證券帳號
+
+stock_reserve_summary
+    account:           證券帳號
+
+stock_reserve_detail
+    account:           證券帳號
+
+```
+
+### 申請預收股票
+
+Order
+
+```
+# 商品檔
+contract = api.Contracts.Stocks.TSE.TSE1217
+# 預收股數
+share = 1000
+
+```
+
+In
+
+```
+# 申請預收股票
+resp = api.reserve_stock(contract, share, account=api.stock_account)
+resp
+
+```
+
+Out
+
+```
+ReserveOrderResp(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='1217',
+        target_code=''
+    ),
+    account=StockAccount(
+        person_id='YOUR_PERSON_ID',
+        broker_id='YOUR_BROKER_ID',
+        account_id='YOUR_ACCOUNT_ID',
+        signed=true,
+        username=''
+    ),
+    share=1000,
+    status=true,
+    info=''
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/reserve_stock \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {
+      "security_type": "STK",
+      "exchange": "TSE",
+      "code": "1217"
+    },
+    "share": 1000,
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+{"contract":{"security_type":"STK","exchange":"TSE","code":"1217","target_code":""},"account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""},"share":1000,"status":true,"info":""}
+
+```
+
+### 查詢預收股票狀態
+
+In
+
+```
+resp = api.stock_reserve_summary(account=api.stock_account)
+resp
+
+```
+
+Out
+
+```
+ReserveStocksSummary(
+    stocks=[
+        ReserveStockSummary(
+            contract=Contract(
+                security_type='STK',
+                exchange='TSE',
+                code='2890',
+                target_code=''
+            ),
+            available_share=5000,
+            reserved_share=0
+        )
+    ],
+    account=StockAccount(
+        person_id='YOUR_PERSON_ID',
+        broker_id='YOUR_BROKER_ID',
+        account_id='YOUR_ACCOUNT_ID',
+        signed=true,
+        username=''
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/stock_reserve_summary \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+{"stocks":[{"contract":{"security_type":"STK","exchange":"TSE","code":"2890","target_code":""},"available_share":5000,"reserved_share":0}],"account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""}}
+
+```
+
+### 查詢預收股票明細
+
+In
+
+```
+resp = api.stock_reserve_detail(account=api.stock_account)
+resp
+
+```
+
+Out
+
+```
+ReserveStocksDetail(
+    stocks=[
+        ReserveStockDetail(
+            contract=Contract(
+                security_type='STK',
+                exchange='TSE',
+                code='6153',
+                target_code=''
+            ),
+            share=1000,
+            order_datetime='2026-05-20T15:16:28+08:00',
+            status=true,
+            info='已完成'
+        )
+    ],
+    account=StockAccount(
+        person_id='YOUR_PERSON_ID',
+        broker_id='YOUR_BROKER_ID',
+        account_id='YOUR_ACCOUNT_ID',
+        signed=true,
+        username=''
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/stock_reserve_detail \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+{"stocks":[{"contract":{"security_type":"STK","exchange":"TSE","code":"6153","target_code":""},"share":1000,"order_datetime":"2026-05-20T15:16:28+08:00","status":true,"info":"已完成"}],"account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""}}
+
+```
+
+### 應用範例
+
+查詢所有名下證券帳號的圈券狀態，將可圈額度全數申請預收股票。
+
+In
+
+```
+import shioaji as sj
+
+api = sj.Shioaji()
+accounts = api.login(
+    api_key="YOUR_API_KEY",
+    secret_key="YOUR_SECRET_KEY",
+)
+api.activate_ca(
+    ca_path="your/ca/path/Sinopac.pfx",
+    ca_passwd="YOUR_CA_PASSWORD",
+    person_id="YOUR_PERSON_ID",
+)
+
+for account in accounts:
+    if account.account_type == sj.AccountType.Stock:
+        summary = api.stock_reserve_summary(account=account)
+        for s in summary.stocks:
+            if s.available_share:
+                api.reserve_stock(
+                    s.contract,
+                    s.available_share,
+                    account=account,
+                )
+
+```
+
+提醒
+
+下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+
+### 下單
+
+下單時必須提供商品資訊`contract`及下單資訊`order`。
+
+place_order
+
+```
+api.place_order?
+
+Signature:
+    api.place_order(
+        contract: sj.Stock,
+        order: sj.StockOrder,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    placing order
+
+```
+
+Parameters
+
+```
+contract: 商品檔（由 api.Contracts.Stocks.* 取得）
+order:    證券委託單物件
+timeout:  逾時毫秒
+cb:       選填，callback 函式
+
+```
+
+sj.StockOrder
+
+```
+action (Action):              買賣別 {Buy: 買, Sell: 賣}
+price (float or int):         價格
+quantity (int):               數量
+price_type (StockPriceType):  價格別 {LMT: 限價, MKT: 市價}
+order_type (OrderType):       委託條件 {ROD, IOC, FOK}
+order_lot (StockOrderLot):    委託別 {Common: 整股, Fixing: 定盤, Odd: 盤後零股, IntradayOdd: 盤中零股}
+order_cond (StockOrderCond):  委託種類 {Cash: 現股, MarginTrading: 融資, ShortSelling: 融券}
+daytrade_short (bool):        先賣後買
+custom_field (str):           備註，只允許輸入大小寫英文字母及數字，且長度最長為 6
+account (Account):            下單帳號
+
+```
+
+place_order
+
+```
+$ shioaji order place --help
+
+Place a stock or futures order
+
+Usage: shioaji order place [OPTIONS] --code <CODE> --action <ACTION> --quantity <QUANTITY>
+
+Options:
+      --code <CODE>                    Security code
+      --action <ACTION>                Buy or sell
+      --price <PRICE>                  Order price (0 for market orders) [default: 0]
+      --quantity <QUANTITY>            Order quantity
+      --price-type <PRICE_TYPE>        Price type: lmt, mkt [default: lmt]
+      --order-type <ORDER_TYPE>        Order type [default: rod]
+      --order-lot <ORDER_LOT>          Stock order lot type
+      --order-cond <ORDER_COND>        Stock order condition
+      --account <ACCOUNT>              Account in BROKER_ID-ACCOUNT_ID format
+      --security-type <SECURITY_TYPE>  Security type hint for contract lookup: STK, FUT, OPT, IND [default: STK]
+      --no-wait                        Skip waiting for order events after placing
+
+```
+
+Parameters
+
+```
+--code:          商品代碼
+--action:        買賣別 {buy, sell}
+--price:         價格（市價單填 0）
+--quantity:      數量
+--price-type:    價格別 {lmt, mkt}
+--order-type:    委託條件 {rod, ioc, fok}
+--order-lot:     委託別 {common, fixing, odd, intraday-odd}
+--order-cond:    委託種類 {cash, margin-trading, short-selling}
+--account:       下單帳號（BROKER_ID-ACCOUNT_ID 格式）
+--security-type: 商品類型，預設 STK
+--no-wait:       下單後不等委託事件
+
+```
+
+place_order
+
+```
+POST /api/v1/order/place_order
+Content-Type: application/json
+
+{
+  "contract": { "security_type": "STK", "exchange": <Exchange>, "code": <string> },
+  "stock_order": {
+    "action": <Action>,
+    "price": <number>,
+    "quantity": <integer>,
+    "price_type": <StockPriceType>,
+    "order_type": <OrderType>,
+    "order_lot": <StockOrderLot>,
+    "order_cond": <StockOrderCond>,
+    "daytrade_short": <boolean>,
+    "custom_field": <string>,
+    "account": { "broker_id": <string>, "account_id": <string> }
+  }
+}
+
+```
+
+Parameters
+
+```
+contract.exchange:          交易所 {TSE, OTC}
+contract.code:              商品代碼
+stock_order.action:         買賣別 {Buy, Sell}
+stock_order.price:          價格
+stock_order.quantity:       數量
+stock_order.price_type:     價格別 {LMT, MKT}
+stock_order.order_type:     委託條件 {ROD, IOC, FOK}
+stock_order.order_lot:      委託別 {Common, Fixing, Odd, IntradayOdd}
+stock_order.order_cond:     委託種類 {Cash, MarginTrading, ShortSelling}
+stock_order.daytrade_short: 先賣後買
+stock_order.custom_field:   備註，只允許輸入大小寫英文字母及數字，且長度最長為 6
+stock_order.account:        下單帳號（省略則使用預設證券帳號）
+
+```
+
+#### 範例：下單
+
+Order
+
+```
+# 商品檔
+contract = api.Contracts.Stocks.TSE.TSE2890
+# 委託內容
+order = sj.StockOrder(
+    action=sj.Action.Buy,
+    price=27.1,
+    quantity=2,
+    price_type=sj.StockPriceType.LMT,
+    order_type=sj.OrderType.ROD,
+    order_lot=sj.StockOrderLot.Common,
+    order_cond=sj.StockOrderCond.Cash,
+    account=api.stock_account,
+)
+
+```
+
+In
+
+```
+# 下單
+trade = api.place_order(contract, order)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890',
+        target_code=''
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=2,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username='YOUR_USERNAME'
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.PendingSubmit: 'PendingSubmit'>,
+        status_code='0',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        msg='委託成功'
+    )
+)
+
+```
+
+下單完成後會收到交易所傳回的下單回報訊息，詳情內容可詳見[下單回報](../order_deal_event/stocks/)。
+
+`place_order` 回傳的 `trade` 狀態若為 `PendingSubmit`，可執行 `update_status` 主動更新，詳見[委託狀態](../UpdateStatus/)。
+
+In
+
+```
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=2,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        order_quantity=2
+    )
+)
+
+```
+
+In
+
+```
+shioaji order place \
+  --code 2890 \
+  --action buy \
+  --price 27.1 \
+  --quantity 2 \
+  --price-type lmt \
+  --order-type rod \
+  --order-lot common \
+  --order-cond cash \
+  --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+contract:
+  security_type: STK
+  exchange: TSE
+  code: "2890"
+  target_code: ""
+order:
+  id: c7b2fe06
+  seqno: "104263"
+  ordno: Y3JS0
+  action: Buy
+  price: 27
+  quantity: 1
+  order_type: ROD
+  price_type: LMT
+  custom_field: ""
+  account:
+    account_type: S
+    person_id: YOUR_PERSON_ID
+    broker_id: YOUR_BROKER_ID
+    account_id: YOUR_ACCOUNT_ID
+    signed: true
+    username: YOUR_USERNAME
+  ca: YOUR_CA_BASE64
+  order_cond: Cash
+  order_lot: Common
+status:
+  id: c7b2fe06
+  status: PendingSubmit
+  status_code: "0"
+  web_id: ""
+  order_ts: 1779168189
+  msg: 委託成功
+  modified_ts: 0
+  modified_price: 0
+  order_quantity: 0
+  deal_quantity: 0
+  cancel_quantity: 0
+  deals[0]:
+
+```
+
+下單完成後會收到交易所傳回的下單回報訊息，詳情內容可詳見[下單回報](../order_deal_event/stocks/)。
+
+`shioaji order place` 回傳的 `status` 若為 `PendingSubmit`，可執行 `shioaji order list` 主動更新，詳見[委託狀態](../UpdateStatus/)。
+
+In
+
+```
+shioaji order list
+
+```
+
+Out
+
+```
+[1]:
+  - contract:
+      security_type: STK
+      exchange: TSE
+      code: "2890"
+    order:
+      id: c7b2fe06
+      seqno: "104263"
+      ordno: Y3JS0
+      action: Buy
+      price: 27
+      quantity: 1
+      order_type: ROD
+      price_type: LMT
+      custom_field: ""
+      account:
+        account_type: S
+        person_id: YOUR_PERSON_ID
+        broker_id: YOUR_BROKER_ID
+        account_id: YOUR_ACCOUNT_ID
+        signed: true
+        username: ""
+      ca: YOUR_CA_BASE64
+      order_cond: Cash
+      order_lot: Common
+    status:
+      id: c7b2fe06
+      status: Submitted
+      status_code: "00"
+      web_id: "137"
+      order_ts: 1779168189
+      msg: ""
+      modified_ts: 1779168189
+      modified_price: 0
+      order_quantity: 1
+      deal_quantity: 0
+      cancel_quantity: 0
+      deals[0]:
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "contract": {"security_type": "STK", "exchange": "TSE", "code": "2890"},
+    "stock_order": {
+      "action": "Buy",
+      "price": 27.1,
+      "quantity": 2,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "order_lot": "Common",
+      "order_cond": "Cash",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890",
+    "target_code": ""
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 2,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": "YOUR_USERNAME"
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "Common"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "PendingSubmit",
+    "status_code": "0",
+    "web_id": "",
+    "order_ts": 1779248594.0,
+    "msg": "委託成功",
+    "modified_ts": 0.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+下單完成後會收到交易所傳回的下單回報訊息，詳情內容可詳見[下單回報](../order_deal_event/stocks/)。
+
+`POST /api/v1/order/place_order` 回傳的 `status` 若為 `PendingSubmit`，可呼叫 `POST /api/v1/order/trades` 主動更新，詳見[委託狀態](../UpdateStatus/)。
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/trades \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "broker_id": "YOUR_BROKER_ID",
+    "account_id": "YOUR_ACCOUNT_ID"
+  }'
+
+```
+
+Out
+
+```
+[
+  {
+    "contract": {
+      "security_type": "STK",
+      "exchange": "TSE",
+      "code": "2890"
+    },
+    "order": {
+      "id": "90681873",
+      "seqno": "218626",
+      "ordno": "Y2CO1",
+      "action": "Buy",
+      "price": 27.1,
+      "quantity": 2,
+      "order_type": "ROD",
+      "price_type": "LMT",
+      "custom_field": "",
+      "account": {
+        "account_type": "S",
+        "person_id": "YOUR_PERSON_ID",
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID",
+        "signed": true,
+        "username": ""
+      },
+      "ca": "YOUR_CA_BASE64",
+      "order_cond": "Cash",
+      "order_lot": "Common"
+    },
+    "status": {
+      "id": "90681873",
+      "status": "Submitted",
+      "status_code": "00",
+      "web_id": "137",
+      "order_ts": 1779248594.0,
+      "msg": "",
+      "modified_ts": 1779248594.0,
+      "modified_price": 0.0,
+      "order_quantity": 2,
+      "deal_quantity": 0,
+      "cancel_quantity": 0,
+      "deals": []
+    }
+  }
+]
+
+```
+
+委託單狀態
+
+- `PendingSubmit`: 傳送中
+- `PreSubmitted`: 預約單
+- `Submitted`: 傳送成功
+- `Failed`: 失敗
+- `Cancelled`: 已刪除
+- `Filled`: 完全成交
+- `PartFilled`: 部分成交
+
+### 改單
+
+改單時必須提供原 `trade` 物件。提供改價與改量，兩種改單方式。其中，改量只能減量。
+
+update_order
+
+```
+api.update_order?
+
+Signature:
+    api.update_order(
+        trade: sj.Trade,
+        price: Optional[float] = None,
+        qty: Optional[int] = None,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    update the order price or qty
+
+```
+
+Parameters
+
+```
+trade:    委託單物件
+price:    新價格（改價時帶）
+qty:      新數量（改量時帶，只能減少）
+timeout:  逾時毫秒
+cb:       選填，callback 函式
+
+```
+
+update_price / update_qty
+
+```
+POST /api/v1/order/update_price
+Content-Type: application/json
+
+{
+  "trade_id": <string>,
+  "price": <number>
+}
+
+POST /api/v1/order/update_qty
+Content-Type: application/json
+
+{
+  "trade_id": <string>,
+  "quantity": <integer>
+}
+
+```
+
+Parameters
+
+```
+trade_id: 委託單 ID（取自 place 回傳的 status.id）
+price:    新價格
+quantity: 新數量（只能減少）
+
+```
+
+注意
+
+執行改單前，需先呼叫 `update_status` 取得委託單編號 (`ordno`)。
+
+#### 範例：改價
+
+In
+
+```
+api.update_order(trade=trade, price=27.2)
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='6b6cf6bc',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=1,
+        seqno='215654',
+        ordno='Y29J1',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='6b6cf6bc',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 32, 38, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 32, 45, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        modified_price=27.2,
+        order_quantity=1
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_price \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID",
+    "price": 27.2
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890"
+  },
+  "order": {
+    "id": "a06a418e",
+    "seqno": "221976",
+    "ordno": "Y2HD6",
+    "action": "Buy",
+    "price": 27.2,
+    "quantity": 1,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "Common"
+  },
+  "status": {
+    "id": "a06a418e",
+    "status": "Submitted",
+    "status_code": "00",
+    "web_id": "137",
+    "order_ts": 1779249680.0,
+    "msg": "",
+    "modified_ts": 1779249680.0,
+    "modified_price": 0.0,
+    "order_quantity": 1,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+#### 範例：改量(減量)
+
+注意
+
+`update_order` 只能用來**減少**原委託單的委託數量。
+
+In
+
+```
+api.update_order(trade=trade, qty=1)
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=2,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.Submitted: 'Submitted'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 24, 35, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        order_quantity=1,
+        cancel_quantity=1
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_qty \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID",
+    "quantity": 1
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890"
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 1,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "Common"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "Submitted",
+    "status_code": "00",
+    "web_id": "137",
+    "order_ts": 1779248594.0,
+    "msg": "",
+    "modified_ts": 1779248627.0,
+    "modified_price": 0.0,
+    "order_quantity": 1,
+    "deal_quantity": 0,
+    "cancel_quantity": 1,
+    "deals": []
+  }
+}
+
+```
+
+### 刪單
+
+刪單時必須提供原 `trade` 物件。
+
+cancel_order
+
+```
+api.cancel_order?
+
+Signature:
+    api.cancel_order(
+        trade: sj.Trade,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[sj.Trade], None]] = None,
+    ) -> sj.Trade
+Docstring:
+    cancel order
+
+```
+
+Parameters
+
+```
+trade:   委託單物件
+timeout: 逾時毫秒
+cb:      選填，callback 函式
+
+```
+
+cancel_order
+
+```
+POST /api/v1/order/cancel_order
+Content-Type: application/json
+
+{
+  "trade_id": <string>
+}
+
+```
+
+Parameters
+
+```
+trade_id: 委託單 ID（取自 place 回傳的 status.id）
+
+```
+
+注意
+
+執行刪單前，需先呼叫 `update_status` 取得委託單編號 (`ordno`)。
+
+#### 範例：刪單
+
+In
+
+```
+api.cancel_order(trade)
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a647f23d',
+        action=<Action.Buy: 'Buy'>,
+        price=27.1,
+        quantity=2,
+        seqno='214115',
+        ordno='Y27FI',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='a647f23d',
+        status=<OrderStatus.Cancelled: 'Cancelled'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 11, 24, 41, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        cancel_quantity=2
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/cancel_order \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "trade_id": "YOUR_TRADE_ID"
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": {
+    "security_type": "STK",
+    "exchange": "TSE",
+    "code": "2890"
+  },
+  "order": {
+    "id": "90681873",
+    "seqno": "218626",
+    "ordno": "Y2CO1",
+    "action": "Buy",
+    "price": 27.1,
+    "quantity": 2,
+    "order_type": "ROD",
+    "price_type": "LMT",
+    "custom_field": "",
+    "account": {
+      "account_type": "S",
+      "person_id": "YOUR_PERSON_ID",
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "signed": true,
+      "username": ""
+    },
+    "ca": "YOUR_CA_BASE64",
+    "order_cond": "Cash",
+    "order_lot": "Common"
+  },
+  "status": {
+    "id": "90681873",
+    "status": "Cancelled",
+    "status_code": "00",
+    "web_id": "137",
+    "order_ts": 1779248594.0,
+    "msg": "",
+    "modified_ts": 1779248627.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 2,
+    "deals": []
+  }
+}
+
+```
+
+### 成交
+
+委託單成交後，可呼叫 `update_status` 看到 `status` 轉為 `Filled`，`deals` 欄位填入成交明細。
+
+In
+
+```
+api.update_status(api.stock_account)
+trade
+
+```
+
+Out
+
+```
+Trade(
+    contract=Contract(
+        security_type='STK',
+        exchange='TSE',
+        code='2890'
+    ),
+    order=Order(
+        id='a06a418e',
+        action=<Action.Buy: 'Buy'>,
+        price=27.2,
+        quantity=1,
+        seqno='221976',
+        ordno='Y2HD6',
+        order_type=<OrderType.ROD: 'ROD'>,
+        price_type=<PriceType.LMT: 'LMT'>,
+        account=StockAccount(
+            person_id='YOUR_PERSON_ID',
+            broker_id='YOUR_BROKER_ID',
+            account_id='YOUR_ACCOUNT_ID',
+            signed=true,
+            username=''
+        ),
+        order_cond=<StockOrderCond.Cash: 'Cash'>,
+        order_lot=<StockOrderLot.Common: 'Common'>
+    ),
+    status=OrderStatus(
+        id='a06a418e',
+        status=<OrderStatus.Filled: 'Filled'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 20, 12, 1, 20, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        web_id='137',
+        modified_time=datetime.datetime(2026, 5, 20, 12, 1, 20, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+        order_quantity=1,
+        deal_quantity=1,
+        deals=[
+            Deal(seq='000001', price=27.2, quantity=1, ts=1779249680.0)
+        ]
+    )
+)
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/trades \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "broker_id": "YOUR_BROKER_ID",
+    "account_id": "YOUR_ACCOUNT_ID"
+  }'
+
+```
+
+Out
+
+```
+[
+  {
+    "contract": {
+      "security_type": "STK",
+      "exchange": "TSE",
+      "code": "2890"
+    },
+    "order": {
+      "id": "a06a418e",
+      "seqno": "221976",
+      "ordno": "Y2HD6",
+      "action": "Buy",
+      "price": 27.2,
+      "quantity": 1,
+      "order_type": "ROD",
+      "price_type": "LMT",
+      "custom_field": "",
+      "account": {
+        "account_type": "S",
+        "person_id": "YOUR_PERSON_ID",
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID",
+        "signed": true,
+        "username": ""
+      },
+      "ca": "YOUR_CA_BASE64",
+      "order_cond": "Cash",
+      "order_lot": "Common"
+    },
+    "status": {
+      "id": "a06a418e",
+      "status": "Filled",
+      "status_code": "00",
+      "web_id": "137",
+      "order_ts": 1779249680.0,
+      "msg": "",
+      "modified_ts": 1779249680.0,
+      "modified_price": 0.0,
+      "order_quantity": 1,
+      "deal_quantity": 1,
+      "cancel_quantity": 0,
+      "deals": [
+        {
+          "seq": "000001",
+          "price": 27.2,
+          "quantity": 1,
+          "ts": 1779249680.0
+        }
+      ]
+    }
+  }
+]
+
+```
+
+## 範例
+
+[證券下單範例 ( jupyter)](https://nbviewer.jupyter.org/github/Sinotrade/Sinotrade.github.io/blob/master/tutorial/stock.ipynb)
+
+### 買賣別
+
+買
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Buy, 
+    price_type=sj.constant.StockPriceType.LMT, 
+    order_type=sj.constant.OrderType.ROD, 
+    order_lot=sj.constant.StockOrderLot.Common, 
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+賣
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Sell, 
+    price_type=sj.constant.StockPriceType.LMT, 
+    order_type=sj.constant.OrderType.ROD, 
+    order_lot=sj.constant.StockOrderLot.Common, 
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+Daytrade Short
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Sell,
+    price_type=sj.constant.StockPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD,
+    order_lot=sj.constant.StockOrderLot.Common,
+    daytrade_short=True,
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Sell,
+    price_type=sj.constant.TFTStockPriceType.LMT, 
+    order_type=sj.constant.TFTOrderType.ROD, 
+    order_lot=sj.constant.TFTStockOrderLot.Common, 
+    first_sell=sj.constant.StockFirstSell.Yes,
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+### ROD + LMT
+
+ROD + LMT
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Sell,
+    price_type=sj.constant.StockPriceType.LMT,
+    order_type=sj.constant.OrderType.ROD,
+    order_lot=sj.constant.StockOrderLot.Common,
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+```
+order = api.Order(
+    price=12, 
+    quantity=1, 
+    action=sj.constant.Action.Sell,
+    price_type=sj.constant.TFTStockPriceType.LMT, 
+    order_type=sj.constant.TFTOrderType.ROD, 
+    order_lot=sj.constant.TFTStockOrderLot.Common, 
+    custom_field="test",
+    account=api.stock_account
+)
+
+```
+
+提醒
+
+下單前必須先[登入](../../login/)及啟用[憑證](../../prepare/terms/)。
+
+在取得 `Trade` 狀態前，必須先呼叫 `update_status` 更新。預設會更新名下所有帳號的委託；若只想更新單一帳號，將該帳號傳入 `account`；若只想更新單一委託，將該 `Trade` 物件以關鍵字參數 `trade=` 傳入。更新完成後，可從 `api.list_trades()` 取得最新的 `Trade` 清單，或直接讀取傳入的 `trade` 物件中的 `status` 確認狀態。
+
+update_status
+
+```
+api.update_status?
+
+Signature:
+    api.update_status(
+        account: Optional[sj.Account] = None,
+        *,
+        trade: Optional[sj.Trade] = None,
+        timeout: Optional[int] = 30000,
+        cb: Optional[Callable[[], None]] = None,
+    ) -> None
+
+```
+
+Parameters
+
+```
+account: 證券或期貨帳號；省略則更新名下所有帳號
+trade:   指定要更新的 Trade 物件（關鍵字參數）
+timeout: 逾時毫秒
+cb:      選填，callback 函式
+
+```
+
+update_status
+
+```
+POST /api/v1/order/update_status
+Content-Type: application/json
+
+{
+  "account": { "broker_id": <string>, "account_id": <string> }
+}
+
+```
+
+Parameters
+
+```
+account: 證券或期貨帳號
+
+```
+
+## 屬性
+
+OrderStatus
+
+```
+id (str):                  關聯 Order 物件編碼
+status (OrderStatus):      委託狀態，{
+                              Cancelled:     已刪除,
+                              Filled:        完全成交,
+                              PartFilled:    部分成交,
+                              Inactive:      未啟用,
+                              Failed:        失敗,
+                              PendingSubmit: 傳送中,
+                              PreSubmitted:  預約單,
+                              Submitted:     傳送成功
+                           }
+status_code (str):         狀態碼
+web_id (str):              Web 端委託編號
+order_datetime (datetime): 委託時間
+msg (str):                 訊息
+modified_time (datetime):  最後改單時間
+modified_price (float):    改價金額
+order_quantity (int):      委託數量
+deal_quantity (int):       成交數量
+cancel_quantity (int):     取消委託數量
+deals (List[Deal]):        成交明細
+
+```
+
+Deal
+
+```
+seq (str):           成交序號
+price (float):       成交價
+quantity (int):      成交數量
+ts (float):          成交時間戳
+datetime (datetime): 成交時間（由 ts 計算，tz=Asia/Taipei +0800）
+
+```
+
+## 範例
+
+### 取得證券委託狀態
+
+In
+
+```
+api.update_status(api.stock_account)
+api.list_trades()
+
+```
+
+Out
+
+```
+[
+    Trade(
+        contract=Contract(
+            security_type='STK',
+            exchange='TSE',
+            code='2890'
+        ),
+        order=Order(
+            id='a647f23d',
+            action=<Action.Buy: 'Buy'>,
+            price=27.1,
+            quantity=2,
+            seqno='214115',
+            ordno='Y27FI',
+            order_type=<OrderType.ROD: 'ROD'>,
+            price_type=<PriceType.LMT: 'LMT'>,
+            account=StockAccount(
+                person_id='YOUR_PERSON_ID',
+                broker_id='YOUR_BROKER_ID',
+                account_id='YOUR_ACCOUNT_ID',
+                signed=true,
+                username=''
+            ),
+            order_cond=<StockOrderCond.Cash: 'Cash'>,
+            order_lot=<StockOrderLot.Common: 'Common'>
+        ),
+        status=OrderStatus(
+            id='a647f23d',
+            status=<OrderStatus.Filled: 'Filled'>,
+            status_code='00',
+            order_datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            web_id='137',
+            modified_time=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            order_quantity=2,
+            deal_quantity=2,
+            deals=[
+                Deal(
+                    seq='000001',
+                    price=27.1,
+                    quantity=2,
+                    ts=1747714234.123456,
+                    datetime=datetime.datetime(2026, 5, 20, 11, 24, 30, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+                )
+            ]
+        )
+    )
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+[{"contract":{"security_type":"STK","exchange":"TSE","code":"2890"},"order":{"id":"a647f23d","action":"Buy","price":27.1,"quantity":2,"seqno":"214115","ordno":"Y27FI","order_type":"ROD","price_type":"LMT","account":{"account_type":"S","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""},"order_cond":"Cash","order_lot":"Common"},"status":{"id":"a647f23d","status":"Filled","status_code":"00","order_datetime":"2026-05-20T11:24:30+08:00","web_id":"137","modified_time":"2026-05-20T11:24:30+08:00","order_quantity":2,"deal_quantity":2,"deals":[{"seq":"000001","price":27.1,"quantity":2,"ts":1747714234.123456}]}}]
+
+```
+
+### 取得期貨委託狀態
+
+In
+
+```
+api.update_status(api.futopt_account)
+api.list_trades()
+
+```
+
+Out
+
+```
+[
+    Trade(
+        contract=Contract(
+            security_type='FUT',
+            exchange='TAIFEX',
+            code='TMFE6'
+        ),
+        order=Order(
+            id='e0ae2459',
+            action=<Action.Buy: 'Buy'>,
+            price=36216,
+            quantity=2,
+            seqno='242472',
+            ordno='vE0Dr',
+            order_type=<OrderType.ROD: 'ROD'>,
+            price_type=<PriceType.LMT: 'LMT'>,
+            account=FutureAccount(
+                person_id='YOUR_PERSON_ID',
+                broker_id='YOUR_BROKER_ID',
+                account_id='YOUR_ACCOUNT_ID',
+                signed=true,
+                username=''
+            ),
+            octype=<FuturesOCType.NewPosition: 'NewPosition'>
+        ),
+        status=OrderStatus(
+            id='e0ae2459',
+            status=<OrderStatus.Filled: 'Filled'>,
+            status_code='0000',
+            order_datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            web_id='Z',
+            modified_time=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8))),
+            order_quantity=2,
+            deal_quantity=2,
+            deals=[
+                Deal(
+                    seq='000001',
+                    price=36216,
+                    quantity=2,
+                    ts=1747647787.123456,
+                    datetime=datetime.datetime(2026, 5, 19, 18, 3, 7, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+                )
+            ]
+        )
+    )
+]
+
+```
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+Out
+
+```
+[{"contract":{"security_type":"FUT","exchange":"TAIFEX","code":"TMFE6"},"order":{"id":"e0ae2459","action":"Buy","price":36216,"quantity":2,"seqno":"242472","ordno":"vE0Dr","order_type":"ROD","price_type":"LMT","account":{"account_type":"F","person_id":"YOUR_PERSON_ID","broker_id":"YOUR_BROKER_ID","account_id":"YOUR_ACCOUNT_ID","signed":true,"username":""},"octype":"NewPosition"},"status":{"id":"e0ae2459","status":"Filled","status_code":"0000","order_datetime":"2026-05-19T18:03:07+08:00","web_id":"Z","modified_time":"2026-05-19T18:03:07+08:00","order_quantity":2,"deal_quantity":2,"deals":[{"seq":"000001","price":36216,"quantity":2,"ts":1747647787.123456}]}}]
+
+```
+
+### 更新特定交易狀態
+
+In
+
+```
+# trade 可從 place_order 或 list_trades 取得
+# trade = api.place_order(contract, order)
+# trade = api.list_trades()[0]
+
+api.update_status(trade=trade)
+
+```
+
+HTTP 介面僅能以 `account` 更新該帳號全部委託，不支援指定單一 trade。
+
+In
+
+```
+curl -X POST http://localhost:8080/api/v1/order/update_status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "account": {
+      "broker_id": "YOUR_BROKER_ID",
+      "account_id": "YOUR_ACCOUNT_ID"
+    }
+  }'
+
+```
+
+### 委託回報
+
+當期交所收到委託將會回傳回報。在回報中分為四部分，包括operation、order、status及contract。以下我們會在進行詳細的說明。
+
+委託回報
+
+```
+<OrderState.FuturesOrder: 'FORDER'> {
+    'operation': {
+        'op_type': 'New',
+        'op_code': '00',
+        'op_msg': ''
+    },
+    'order': {
+        'id': '0bbe4f6d',
+        'seqno': '354926',
+        'ordno': 'ta0fu',
+        'account': {
+            'account_type': 'F',
+            'person_id': '',
+            'broker_id': 'YOUR_BROKER_ID',
+            'account_id': 'YOUR_ACCOUNT_ID',
+            'signed': True,
+            'username': ''
+        },
+        'action': 'Buy',
+        'price': 36112.0,
+        'quantity': 1,
+        'order_type': 'ROD',
+        'price_type': 'LMT',
+        'market_type': 'Day',
+        'oc_type': 'New',
+        'subaccount': '',
+        'combo': False
+    },
+    'status': {
+        'id': '0bbe4f6d',
+        'exchange_ts': 1779331888.0,
+        'modified_price': 0.0,
+        'cancel_quantity': 0,
+        'order_quantity': 1,
+        'web_id': 'Z'
+    },
+    'contract': {
+        'security_type': 'FUT',
+        'code': 'TMF',
+        'exchange': 'TIM',
+        'delivery_month': '202606',
+        'full_code': 'TMFF6',
+        'delivery_date': '',
+        'strike_price': 0.0,
+        'option_right': 'Future'
+    }
+}
+
+```
+
+委託回報資訊
+
+**operation**
+
+```
+op_type (str): {
+        "New": 新單, 
+        "Cancel": 刪單, 
+        "UpdatePrice": 改價, 
+        "UpdateQty": 改量
+    }
+op_code (str): {"00": 成功, others: 失敗}
+op_msg (str): 錯誤訊息
+
+```
+
+**order**
+
+```
+id (str): 與成交回報的trade_id相同
+seqno (str): 平台單號
+ordno (str): 委託單號
+account (dict): 帳號資訊
+action (str): 買賣別
+price (float or int): 委託價
+quantity (int): 委託量
+order_cond (str): {
+            Cash: 現股, 
+            MarginTrading: 融資, 
+            ShortSelling: 融券
+        }
+order_type (str): 委託類別 {ROD, IOC, FOK}
+price_type (str): {LMT: 限價, MKT: 市價, MKP: 範圍市價}
+market_type (str): 市場別 {Day:日盤, Night:夜盤}
+oc_type (str): {
+            New: 新倉, 
+            Cover: 平倉, 
+            Auto: 自動, 
+            DayTrade: 當沖
+        }
+subaccount(str): 子帳號
+combo (bool): 是否為組合單
+
+```
+
+**status**
+
+```
+id (str): 與成交回報的trade_id相同
+exchange_ts (int): 交易所時間
+modified_price (float or int): 改價
+cancel_quantity (int): 取消數量
+order_quantity (int): 委託數量
+web_id (str): 下單平台代碼
+
+```
+
+**contract**
+
+```
+security_type (str): 商品類別
+code (str): 商品代碼
+full_code (str): 商品代碼(含交割月份)
+exchange (str): 交易所
+delivery_month (str): 交割月份
+delivery_date (str): 交割日期
+strike_price (float): 履約價
+option_right (str): {Future, OptionCall, OptionPut}
+
+```
+
+### 成交回報
+
+當搓合成功，期交所會傳送成交回報告知。搓合成功包含部分成交以及完全成交，可以從委託回報中的`id`去對應成交回報中的`trade_id`去確認是否為同一筆委託單。
+
+成交回報
+
+```
+<OrderState.FuturesDeal: 'FDEAL'> {
+    'trade_id': '4e6df0f6',
+    'seqno': '458545',
+    'ordno': 'tA0deX1O',
+    'exchange_seq': 'j5006396',
+    'action': 'Sell',
+    'code': 'TX1',
+    'price': 25.0,
+    'quantity': 1,
+    'subaccount': '',
+    'security_type': 'OPT',
+    'delivery_month': '202512',
+    'ts': 1764685425.0,
+    'broker_id': 'YOUR_BROKER_ID',
+    'account_id': 'YOUR_ACCOUNT_ID',
+    'full_code': 'TX127900L5',
+    'strike_price': 27900.0,
+    'option_right': 'OptionCall',
+    'market_type': 'Day',
+    'combo': False
+}
+
+```
+
+成交回報
+
+```
+trade_id (str): 與委託回報id相同
+seqno (str): 平台單號
+ordno (str): 前五碼為同委託回報委託單號，後三碼為同筆委託成交交易序號。
+exchange_seq (str): 回報序號
+broker_id (str): 分行代碼
+account_id (str): 帳號
+action (str): 買賣別
+code (str): 商品代碼
+full_code (str): 商品代碼(含交割月份)
+price (float or int): 成交價
+quantity (int): 成交量
+subaccount (str): 子帳號
+security_type (str): 商品類別
+delivery_month (str): 交割月份
+strike_price (float): 履約價
+option_right (str): {Future, OptionCall, OptionPut}
+market_type (str): {Day, Night}
+ts (int): 成交時間戳    
+
+```
+
+注意
+
+交易所回傳訊息優先順序成交回報大於委託回報，所以當委託立即成交可能會先收到成交回報。
+
+### 回報處理
+
+欲處理委託、成交回報，詳細可參見[Callback](../../../callback/orderdeal_event/)。
+
+### 委託回報
+
+當證交所收到委託將會回傳回報。在回報中分為四部分，包括operation、order、status及contract。以下我們會在進行詳細的說明。
+
+委託回報
+
+```
+<OrderState.StockOrder: 'SORDER'> {
+    'operation': {
+        'op_type': 'New',
+        'op_code': '00',
+        'op_msg': ''
+    },
+    'order': {
+        'id': '348d1c6a',
+        'seqno': '351522',
+        'ordno': 'Y1S5N',
+        'account': {
+            'account_type': 'S',
+            'person_id': '',
+            'broker_id': 'YOUR_BROKER_ID',
+            'account_id': 'YOUR_ACCOUNT_ID',
+            'signed': True,
+            'username': ''
+        },
+        'action': 'Buy',
+        'price': 27.0,
+        'quantity': 1,
+        'order_type': 'ROD',
+        'price_type': 'LMT',
+        'order_cond': 'Cash',
+        'order_lot': 'Common',
+        'custom_field': ''
+    },
+    'status': {
+        'id': '348d1c6a',
+        'exchange_ts': 1779331286.678,
+        'modified_price': 0.0,
+        'cancel_quantity': 0,
+        'order_quantity': 1,
+        'web_id': '137'
+    },
+    'contract': {
+        'exchange': 'TSE',
+        'code': '2890',
+        'security_type': 'STK',
+        'symbol': '',
+        'name': '',
+        'currency': 'TWD'
+    }
+}
+
+```
+
+委託回報資訊
+
+**operation**
+
+```
+op_type (str): {
+            "New": 新單, 
+            "Cancel": 刪單, 
+            "UpdatePrice": 改價, 
+            "UpdateQty": 改量
+        }
+op_code (str): {"00": 成功, others: 失敗}
+op_msg (str): 錯誤訊息
+
+```
+
+**order**
+
+```
+id (str): 與成交回報的trade_id相同
+seqno (str): 平台單號
+ordno (str): 委託單號
+account (dict): 帳號資訊
+action (str): 買賣別 {Buy, Sell}
+price (float or int): 委託價格
+quantity (int): 委託數量
+order_type (str): 委託類別 {ROD, IOC, FOK}
+price_type (str): {LMT: 限價, MKT: 市價, MKP: 範圍市價}
+order_cond (str): {
+            Cash: 現股, 
+            MarginTrading: 融資, 
+            ShortSelling: 融券
+        }
+order_lot (str): {
+            Common: 整股, 
+            Fixing: 定盤, 
+            Odd: 盤後零股, 
+            IntradayOdd: 盤中零股
+        }
+custom_field (str): 自訂欄位
+
+```
+
+**status**
+
+```
+id (str): 與成交回報的trade_id相同
+exchange_ts (int): 交易所時間
+modified_price (float or int): 改價
+cancel_quantity (int): 取消數量
+order_quantity (int): 委託數量
+web_id (str): 下單平台代碼
+
+```
+
+**contract**
+
+```
+security_type (str): 商品類別
+exchange (str): 交易所
+code (str): 商品代碼
+symbol (str): 符號
+name (str): 商品名稱
+currency (str): 幣別
+
+```
+
+### 成交回報
+
+當搓合成功，證交所會傳送成交回報告知。搓合成功包含部分成交以及完全成交，可以從委託回報中的`id`去對應成交回報中的`trade_id`去確認是否為同一筆委託單。
+
+成交回報
+
+```
+<OrderState.StockDeal: 'SDEAL'> {
+    'trade_id': '9c6ae2eb',
+    'seqno': '269866',
+    'ordno': 'IN497',
+    'exchange_seq': '669915',
+    'broker_id': 'YOUR_BROKER_ID',
+    'account_id': 'YOUR_ACCOUNT_ID',
+    'action': 'Buy',
+    'code': '2890',
+    'order_cond': 'Cash',
+    'order_lot': 'IntradayOdd',
+    'price': 267.5,
+    'quantity': 3,
+    'web_id': '137',
+    'custom_field': 'test',
+    'ts': 1673577256.354
+}
+
+```
+
+成交回報
+
+```
+trade_id (str): 與委託回報id相同
+seqno (str): 平台單號
+ordno (str): 前五碼為同委託回報委託單號，後三碼為同筆委託成交交易序號。
+exchange_seq (str): 回報序號
+broker_id (str): 分行代碼
+account_id (str): 帳號
+action (str): 買賣別 {Buy, Sell}
+code (str): 商品代碼
+order_cond (str): {
+            Cash: 現股, 
+            MarginTrading: 融資, 
+            ShortSelling: 融券
+        }
+order_lot (str): {
+            Common: 整股, 
+            Fixing: 定盤, 
+            Odd: 盤後零股, 
+            IntradayOdd: 盤中零股
+        }
+price (float or int): 成交價
+quantity (int): 成交量
+web_id (str): 平台代碼
+custom_field (str): 自訂欄位
+ts (int): 成交時間戳
+
+```
+
+注意
+
+交易所回傳訊息優先順序成交回報大於委託回報，所以當委託立即成交可能會先收到成交回報。
+
+### 回報處理
+
+欲處理委託、成交回報，詳細可參見[Callback](../../../callback/orderdeal_event/)。
+
+首先，我們延伸前面在環境建立章節使用 `uv` 建立的專案 `sj-trading` 來新增測試流程的部分。
+
+這部分完整專案的程式碼可以參考 [sj-trading https://github.com/Sinotrade/sj-trading-demo](https://github.com/Sinotrade/sj-trading-demo)。
+
+可以使用 `git` 將整個環境複製到本地就可以直接使用
+
+下載專案
+
+```
+git clone https://github.com/Sinotrade/sj-trading-demo.git
+cd sj-trading-demo
+
+```
+
+下面我們將一步一步的介紹如何新增測試流程。
+
+### Shioaji 版本
+
+獲取 Shioaji 版本資訊
+
+新增版本資訊
+
+在 `src/sj_trading/__init__.py` 新增
+
+```
+def show_version() -> str:
+    print(f"Shioaji Version: {sj.__version__}")
+    return sj.__version__
+
+```
+
+新增版本指令到專案
+
+在 `pyproject.toml` 新增 `version` 的指令
+
+```
+[project.scripts]
+version = "sj_trading:show_version"
+
+```
+
+執行 `uv run version` 就可以看到 Shioaji 的版本資訊
+
+```
+Shioaji Version: 1.2.0
+
+```
+
+### 現貨下單測試
+
+新增下單測試檔案
+
+在 `src/sj_trading` 新增檔案 `testing_flow.py`
+
+新增以下內容
+
+```
+import shioaji as sj
+from shioaji.constant import Action, StockPriceType, OrderType
+import os
+
+def testing_stock_ordering():
+    # 測試環境登入
+    api = sj.Shioaji(simulation=True)
+    accounts = api.login(
+        api_key=os.environ["API_KEY"],
+        secret_key=os.environ["SECRET_KEY"],
+    )
+    # 顯示所有可用的帳戶
+    print(f"Available accounts: {accounts}")
+    api.activate_ca(
+        ca_path=os.environ["CA_CERT_PATH"],
+        ca_passwd=os.environ["CA_PASSWORD"],
+    )
+
+    # 準備下單的 Contract
+    # 使用 2890 永豐金為例
+    contract = api.Contracts.Stocks["2890"]
+    print(f"Contract: {contract}")
+
+    # 建立委託下單的 Order
+    order = sj.order.StockOrder(
+        action=Action.Buy, # 買進
+        price=contract.reference, # 以平盤價買進
+        quantity=1, # 下單數量
+        price_type=StockPriceType.LMT, # 限價單
+        order_type=OrderType.ROD, # 當日有效單
+        account=api.stock_account, # 使用預設的帳戶
+    )
+    print(f"Order: {order}")
+
+    # 送出委託單
+    trade = api.place_order(contract=contract, order=order)
+    print(f"Trade: {trade}")
+
+    # 更新狀態
+    api.update_status()
+    print(f"Status: {trade.status}")
+
+```
+
+新增測試下單指令到專案
+
+在 `pyproject.toml` 新增 `stock_testing` 的指令
+
+```
+[project.scripts]
+stock_testing = "sj_trading.testing_flow:testing_stock_ordering"
+
+```
+
+執行 `uv run stock_testing` 就開始進行測試下單了
+
+### 期貨下單測試
+
+新增期貨下單測試
+
+在 `src/sj_trading/testing_flow.py` 新增以下內容
+
+```
+from shioaji.constant import (
+    FuturesPriceType,
+    FuturesOCType,
+)
+
+def testing_futures_ordering():
+    # 測試環境登入
+    api = sj.Shioaji(simulation=True)
+    accounts = api.login(
+        api_key=os.environ["API_KEY"],
+        secret_key=os.environ["SECRET_KEY"],
+    )
+    # 顯示所有可用的帳戶
+    print(f"Available accounts: {accounts}")
+    api.activate_ca(
+        ca_path=os.environ["CA_CERT_PATH"],
+        ca_passwd=os.environ["CA_PASSWORD"],
+    )
+
+    # 取得合約 使用台指期近月為例
+    contract = api.Contracts.Futures["TXFR1"]
+    print(f"Contract: {contract}")
+
+    # 建立期貨委託下單的 Order
+    order = sj.order.FuturesOrder(
+        action=Action.Buy,  # 買進
+        price=contract.reference,  # 以平盤價買進
+        quantity=1,  # 下單數量
+        price_type=FuturesPriceType.LMT,  # 限價單
+        order_type=OrderType.ROD,  # 當日有效單
+        octype=FuturesOCType.Auto,  # 自動選擇新平倉
+        account=api.futopt_account,  # 使用預設的帳戶
+    )
+    print(f"Order: {order}")
+
+    # 送出委託單
+    trade = api.place_order(contract=contract, order=order)
+    print(f"Trade: {trade}")
+
+    # 更新狀態
+    api.update_status()
+    print(f"Status: {trade.status}")
+
+```
+
+新增期貨下單指令到專案
+
+在 `pyproject.toml` 新增 `futures_testing` 的指令
+
+```
+[project.scripts]
+futures_testing = "sj_trading.testing_flow:testing_futures_ordering"
+
+```
+
+執行 `uv run futures_testing` 就開始進行測試下單了
+
+使用Shioaji必須擁有永豐金帳戶。若你還沒有擁有永豐金帳戶，請依據下列步驟開戶:
+
+1. 至[開戶](https://www.sinotrade.com.tw/openact?utm_campaign=OP_inchannel&utm_source=newweb&utm_medium=button_top&strProd=0037&strWeb=0035)頁面
+1. 若你沒有永豐銀行帳戶，請先開銀行帳戶當你的交割戶
+1. 請選取**我要開DAWHO+大戶投**，為開銀行戶以及證券戶
+1. 完成銀行及證券開戶
+
+完成後，請繼續[金鑰與憑證申請](../token/)。
+
+受限於台灣金融法規，新用戶首次使用需簽署相關文件並在測試模式完成測試報告才能進行正式環境的使用。
+
+開戶
+
+在開始之前必須先擁有[永豐金帳戶](https://www.sinotrade.com.tw/openact?utm_campaign=OP_inchannel&utm_source=newweb&utm_medium=button_top&strProd=0037&strWeb=0035)。
+
+## API 簽署
+
+請參見[簽署中心](https://www.sinotrade.com.tw/newweb/signCenter/signCenterIndex/)並在簽署前**仔細閱讀文件**。
+
+注意
+
+證券與期貨需各別簽署，請依您的使用狀況分別完成。
+
+## API測試
+
+確保您完全理解如何使用，需在模擬模式完成測試報告，內容包含以下功能:
+
+- 登入測試 `login`
+- 下單測試 `place_order`
+
+Attention
+
+可測試時間:
+
+- 因應公司資訊安全規定，測試報告服務為星期一至五 08:00 ~ 20:00
+- 18:00 ~ 20:00: 只允許台灣IP
+- 08:00 ~ 18:00: 沒有限制
+
+版本限制:
+
+- 版本 >= 1.2
+
+其他:
+
+- API下單簽署時間須早於API測試的時間，以利審核通過
+- 證券、期貨戶須各別測試
+- 證券/期貨下單測試，需間隔1秒以上，以利系統留存測試紀錄
+
+### 查詢使用版本
+
+```
+import shioaji as sj
+print(sj.__version__)
+
+```
+
+```
+shioaji server check
+
+```
+
+```
+curl http://localhost:8080/api/v1/info
+
+```
+
+證券
+
+```
+# 商品檔 - 請修改此處
+contract = api.Contracts.Stocks.TSE.TSE2890
+
+# 證券委託單 - 請修改此處
+order = sj.StockOrder(
+    action=sj.Action.Buy,                    # 買賣別
+    price=28,                                # 價格
+    quantity=1,                              # 數量
+    price_type=sj.StockPriceType.LMT,        # 價格別
+    order_type=sj.OrderType.ROD,             # 委託條件
+    order_lot=sj.StockOrderLot.Common,       # 委託別
+    order_cond=sj.StockOrderCond.Cash,       # 委託種類
+    account=api.stock_account                # 下單帳號
+)
+
+# 下單
+trade = api.place_order(contract, order)
+trade
+
+```
+
+Out
+
+```
+Response Code: 0 | Event Code: 0 | Info: host '210.59.255.161:80', hostname '210.59.255.161:80' IP 210.59.255.161:80 (host 1 of 1) (host connection attempt 1 of 1) (total connection attempt 1 of 2) | Event: Session up
+
+Trade(
+    contract=Contract(...),
+    order=Order(...),
+    status=OrderStatus(
+        id='000019',
+        status=<OrderStatus.PendingSubmit: 'PendingSubmit'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 15, 14, 44, 43, 371915, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+    )
+)
+
+```
+
+證券
+
+```
+# 商品檔、委託單與帳號 - 請修改此處
+shioaji order place \
+    --code 2890 \
+    --action buy \
+    --price 28 \
+    --quantity 1 \
+    --price-type lmt \
+    --order-type rod \
+    --order-lot common \
+    --order-cond cash \
+    --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+contract: ...
+order: ...
+status:
+  id: "00005C"
+  status: PendingSubmit
+  status_code: "00"
+  order_ts: 1778828991.03281
+  msg: ""
+  modified_ts: 0
+  modified_price: 0
+  order_quantity: 0
+  deal_quantity: 0
+  cancel_quantity: 0
+
+```
+
+證券
+
+```
+# 商品檔、委託單與帳號 - 請修改此處
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contract": {"security_type": "STK", "exchange": "TSE", "code": "2890"},
+    "stock_order": {
+      "action": "Buy",
+      "price": 28,
+      "quantity": 1,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "order_lot": "Common",
+      "order_cond": "Cash",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": ...,
+  "order": ...,
+  "status": {
+    "id": "000066",
+    "status": "PendingSubmit",
+    "status_code": "00",
+    "order_ts": 1778829088.557384,
+    "msg": "",
+    "modified_ts": 0.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": []
+  }
+}
+
+```
+
+期貨
+
+```
+# 商品檔 - 請修改此處
+contract = api.Contracts.Futures.TXF.TXFE6
+
+# 期貨委託單 - 請修改此處
+order = sj.FuturesOrder(
+    action=sj.Action.Buy,                    # 買賣別
+    price=37000,                             # 價格
+    quantity=1,                              # 數量
+    price_type=sj.FuturesPriceType.LMT,      # 價格別
+    order_type=sj.OrderType.ROD,             # 委託條件
+    octype=sj.FuturesOCType.Auto,            # 倉別
+    account=api.futopt_account               # 下單帳號
+)
+
+# 下單
+trade = api.place_order(contract, order)
+trade
+
+```
+
+Out
+
+```
+Response Code: 0 | Event Code: 0 | Info: host '210.59.255.161:80', hostname '210.59.255.161:80' IP 210.59.255.161:80 (host 1 of 1) (host connection attempt 1 of 1) (total connection attempt 1 of 2) | Event: Session up
+
+Trade(
+    contract=Contract(...),
+    order=Order(...),
+    status=OrderStatus(
+        id='000122',
+        status=<OrderStatus.PendingSubmit: 'PendingSubmit'>,
+        status_code='00',
+        order_datetime=datetime.datetime(2026, 5, 15, 15, 51, 27, 582363, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+    )
+)
+
+```
+
+期貨
+
+```
+# 商品檔、委託單與帳號 - 請修改此處
+shioaji order place \
+    --code TXFE6 \
+    --security-type FUT \
+    --action buy \
+    --price 37000 \
+    --quantity 1 \
+    --price-type lmt \
+    --order-type rod \
+    --octype auto \
+    --account YOUR_BROKER_ID-YOUR_ACCOUNT_ID
+
+```
+
+Out
+
+```
+contract: ...
+order: ...
+status:
+  id: "000137"
+  status: PendingSubmit
+  status_code: "00"
+  order_ts: 1778831763.269576
+  msg: ""
+  modified_ts: 0
+  modified_price: 0
+  order_quantity: 0
+  deal_quantity: 0
+  cancel_quantity: 0
+
+```
+
+期貨
+
+```
+# 商品檔、委託單與帳號 - 請修改此處
+curl -X POST http://localhost:8080/api/v1/order/place_order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contract": {"security_type": "FUT", "exchange": "TAIFEX", "code": "TXFE6"},
+    "futures_order": {
+      "action": "Buy",
+      "price": 37000,
+      "quantity": 1,
+      "price_type": "LMT",
+      "order_type": "ROD",
+      "octype": "Auto",
+      "account": {
+        "broker_id": "YOUR_BROKER_ID",
+        "account_id": "YOUR_ACCOUNT_ID"
+      }
+    }
+  }'
+
+```
+
+Out
+
+```
+{
+  "contract": ...,
+  "order": ...,
+  "status": {
+    "id": "000153",
+    "status": "PendingSubmit",
+    "status_code": "00",
+    "order_ts": 1778832017.53043,
+    "msg": "",
+    "modified_ts": 0.0,
+    "modified_price": 0.0,
+    "order_quantity": 0,
+    "deal_quantity": 0,
+    "cancel_quantity": 0,
+    "deals": [],
+    "web_id": ""
+  }
+}
+
+```
+
+Shioaji 使用 API Key 作為登入方式，請依下列步驟申請。
+
+## 金鑰
+
+### 申請金鑰
+
+1. 至理財網個人服務中的 [API 管理頁面](https://www.sinotrade.com.tw/newweb/PythonAPIKey/)
+
+1. 點選新增API KEY
+
+1. 利用手機或是信箱做雙因子驗證，驗證成功才能建立API KEY。
+
+1. 進行API KEY的到期時間設定，以及勾選權限與帳戶，並且設定IP限制。
+
+   權限勾選說明
+
+   - 行情 / 資料 : 可否使用行情 / 資料相關 API
+   - 帳務 : 可否使用帳務相關 API
+   - 交易 : 可否使用交易相關 API
+   - 正式環境 : 可否在正式環境中使用
+
+   注意
+
+   IP建議使用限制，能使該KEY安全性提高。
+
+1. 新增成功會得到金鑰(API Key)與密鑰(Secret Key)
+
+   注意
+
+   - 請妥善保存您的鑰匙，勿將其透漏給任何人，以免造成資產損失。
+   - Secret Key 僅在建立成功時取得，此後再無任何方法得到，請確保以保存
+
+## 憑證
+
+### 憑證下載
+
+1. 至 [API 管理頁面](https://www.sinotrade.com.tw/newweb/PythonAPIKey/) 點選下載憑證按鈕
+
+1. 下載完成請前往下載資料夾將憑證放置到 API 要讀取的路徑
+
+1. 至[理財網](https://www.sinotrade.com.tw/CSCenter/CSCenter_13_3)下載 eleader
+
+1. 登入 eleader
+
+1. 從上方帳戶資料選取(3303)帳號資料設定
+
+1. 點選「步驟說明」
+
+1. 憑證操作步驟說明
+
+### 確認密鑰與憑證
+
+在您的 Python 專案根目錄新增 `.env` 檔案（跟 `pyproject.toml` 同層），內容如下：
+
+```
+SJ_API_KEY=<前面申請的 API Key>
+SJ_SEC_KEY=<前面申請的 Secret Key>
+SJ_CA_PATH=<前面設定的憑證路徑>
+SJ_CA_PASSWD=<憑證密碼>
+
+```
+
+專案資料夾結構如下：
+
+```
+your-project
+├── README.md
+├── .env
+├── pyproject.toml
+├── src
+│   └── your_package
+│       └─ __init__.py
+└── uv.lock
+
+```
+
+加入 python-dotenv 套件來將 .env 的金鑰與憑證載入環境變數：
+
+```
+uv add python-dotenv
+
+```
+
+在 `src/your_package/__init__.py` 中新增以下內容：
+
+```
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def main():
+    api = sj.Shioaji(simulation=True)
+    api.login(
+        api_key=os.environ["SJ_API_KEY"],
+        secret_key=os.environ["SJ_SEC_KEY"],
+        fetch_contract=False
+    )
+    api.activate_ca(
+        ca_path=os.environ["SJ_CA_PATH"],
+        ca_passwd=os.environ["SJ_CA_PASSWD"],
+    )
+    print("login and activate ca success")
+
+```
+
+在 `pyproject.toml` 中 `[project.scripts]` 新增 `main` 指令：
+
+```
+[project.scripts]
+main = "your_package:main"
+
+```
+
+執行 `main` 指令：
+
+```
+uv run main
+
+```
+
+如果看到 `login and activate ca success` 代表成功登入模擬環境了。
+
+在要執行 `shioaji server start` 的目錄底下建立 `.env` 檔，內容如下：
+
+```
+SJ_API_KEY=<前面申請的 API Key>
+SJ_SEC_KEY=<前面申請的 Secret Key>
+SJ_CA_PATH=<前面設定的憑證路徑>
+SJ_CA_PASSWD=<憑證密碼>
+
+```
+
+啟動 server，會自動讀取 `.env` 完成登入與憑證載入：
+
+```
+shioaji server start
+
+```
+
+確認狀態：
+
+```
+shioaji server check
+
+```
+
+成功的話會顯示模擬模式與已登入帳戶資訊。
+
+### 啟用憑證
+
+下單前必須啟用憑證。若您僅使用模擬模式，可略過本節。
+
+呼叫 `api.activate_ca()` 載入並啟用憑證：
+
+```
+result = api.activate_ca(
+    ca_path="/path/to/your/Sinopac.pfx",
+    ca_passwd="YOUR_CA_PASSWORD",
+    person_id="YOUR_PERSON_ID",
+)
+print(result)
+# True
+
+```
+
+Windows 路徑
+
+在 Windows 系統中，若路徑使用反斜線 `\` 分隔，請改為斜線 `/` 或雙反斜線 `\\`。
+
+確認憑證效期：
+
+```
+api.get_ca_expiretime("YOUR_PERSON_ID")
+
+```
+
+`shioaji server start` 會自動讀取 `.env` 中的 `SJ_CA_PATH` 與 `SJ_CA_PASSWD` 完成啟用，無需另外呼叫。
+
+確認憑證效期：
+
+```
+curl "http://localhost:8080/api/v1/auth/ca_expiretime?person_id=YOUR_PERSON_ID"
+
+```
+
+回應：
+
+```
+{"person_id":"YOUR_PERSON_ID","expire_time":"2026-09-13T15:59:59"}
+
+```
+
+接著如果你還有沒有進行 API 簽署的話，請前往下一章進行簽署與測試審核。
