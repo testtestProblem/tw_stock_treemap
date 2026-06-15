@@ -6,6 +6,10 @@ __pycache__/
 .venv/
 venv/
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
 *.log
 .DS_Store
+exports/
+stock_data/
